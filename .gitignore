@@ -1,2 +1,7 @@
 /build/*
+/sim/*
 !/build/*.xpr
+
+*.vcd
+*.vvp
+*.o
