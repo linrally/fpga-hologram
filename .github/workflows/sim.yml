@@ -1,0 +1,26 @@
+name: Run Verilog simulations
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  sim:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install iverilog
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y iverilog
+
+      - name: Run Verilog simulations
+        run: |
+          make sim
+
+
