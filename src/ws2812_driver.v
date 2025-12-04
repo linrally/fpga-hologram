@@ -75,8 +75,9 @@ module ws2812_driver #(
 						end else begin
 							shift_reg <= data[((led_idx + 1) * 24) +: 24];
 						end
-					end else 
+					end else begin
 						bit_idx <= bit_idx - 1;
+					end
 				end
 			end
 
