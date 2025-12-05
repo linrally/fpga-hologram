@@ -50,6 +50,11 @@ architecture Behavioral of top_neopixel is
     -- Edge detection for start button (single pulse)
     signal start_sync_prev : STD_LOGIC := '0';
     signal start_pulse     : STD_LOGIC := '0';
+    
+    -- Test signal for oscilloscope verification
+    signal test_counter : unsigned(26 downto 0) := (others => '0');
+    signal test_output  : STD_LOGIC := '0';
+    signal neopixel_out : STD_LOGIC;  -- Internal signal for neopixel output
 
 begin
 
@@ -112,6 +117,27 @@ begin
     end process;
 
     --------------------------------------------------------------------
+    -- Test Signal Generator: Simple 1 Hz square wave for oscilloscope
+    -- This generates a slow square wave that's easy to see on a scope
+    -- Toggles between 0V and 3.3V every 0.5 seconds
+    --------------------------------------------------------------------
+    process(clk_100mhz)
+    begin
+        if rising_edge(clk_100mhz) then
+            if rst_sync = '1' then
+                test_counter <= (others => '0');
+                test_output <= '0';
+            else
+                test_counter <= test_counter + 1;
+                if test_counter = 50000000 then  -- 50M cycles = 0.5s @ 100MHz
+                    test_output <= not test_output;
+                    test_counter <= (others => '0');
+                end if;
+            end if;
+        end if;
+    end process;
+
+    --------------------------------------------------------------------
     -- Instantiate neopixel_controller
     -- Configured for 48 WS2812B LEDs @ 100 MHz
     --------------------------------------------------------------------
@@ -129,8 +155,15 @@ begin
             start       => start_sync,  -- pulse to start frame transmission
             pixel       => pixel_bits,
             next_px_num => next_px_idx,
-            signal_out  => led_data
+            signal_out  => neopixel_out
         );
+
+    --------------------------------------------------------------------
+    -- OUTPUT SELECTION: Test mode vs Normal mode
+    -- Uncomment the line you want to use:
+    --------------------------------------------------------------------
+    led_data <= test_output;  -- TEST MODE: 1 Hz square wave (easy to see on scope)
+    -- led_data <= neopixel_out;  -- NORMAL MODE: Neopixel signal (uncomment when ready)
 
 end Behavioral;
 

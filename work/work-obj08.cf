@@ -1,0 +1,19 @@
+v 4
+file "/Users/mzoraiz/Desktop/fpga-hologram/" "sim/top_neopixel_tb.vhd" "2b994555cd12b0be8b423e486b5f7aecb1088dbc" "20251205222757.904":
+  entity top_neopixel_tb at 1( 0) + 0 on 21;
+  architecture behavioral of top_neopixel_tb at 8( 118) + 0 on 22;
+file "/Users/mzoraiz/Desktop/fpga-hologram/" "fpga-neopixel-main/src/controller/neopixel_controller.vhd" "eeb3cc8e64fa7fac5001960b32c2c83259699487" "20251205222757.718":
+  entity neopixel_controller at 7( 348) + 0 on 17;
+  architecture behavioral of neopixel_controller at 28( 1527) + 0 on 18;
+file "/Users/mzoraiz/Desktop/fpga-hologram/" "fpga-neopixel-main/src/controller/strip_controller.vhd" "69daeb544a411124326aee6d33c87908a5ffd074" "20251205222757.569":
+  entity strip_controller at 7( 283) + 0 on 13;
+  architecture behavioral of strip_controller at 24( 1247) + 0 on 14;
+file "/Users/mzoraiz/Desktop/fpga-hologram/" "fpga-neopixel-main/src/controller/pixel_controller.vhd" "e7485f252b117d6e77021210219059593deecb9a" "20251205222757.481":
+  entity pixel_controller at 7( 281) + 0 on 11;
+  architecture behavioral of pixel_controller at 22( 1007) + 0 on 12;
+file "/Users/mzoraiz/Desktop/fpga-hologram/" "fpga-neopixel-main/src/controller/signal_controller.vhd" "bf0ffcabc5a10881da80ffdf908acdfc5922adee" "20251205222757.663":
+  entity signal_controller at 8( 412) + 0 on 15;
+  architecture behavioral of signal_controller at 25( 1361) + 0 on 16;
+file "/Users/mzoraiz/Desktop/fpga-hologram/" "src/top_neopixel.vhd" "8e63f202af86b714b91e4ca9c3e0bd8cf4898750" "20251205222757.784":
+  entity top_neopixel at 1( 0) + 0 on 19;
+  architecture behavioral of top_neopixel at 14( 438) + 0 on 20;

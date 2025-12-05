@@ -1,0 +1,98 @@
+# GHDL Makefile for top_neopixel simulation
+# Usage: make -f Makefile.ghdl sim    (run simulation)
+#        make -f Makefile.ghdl wave     (open GTKWave)
+#        make -f Makefile.ghdl clean    (clean generated files)
+
+# Directories
+SRC_DIR = src
+NEO_DIR = fpga-neopixel-main/src/controller
+SIM_DIR = sim
+WORK_DIR = work
+
+# Source files (in dependency order)
+PIXEL_CTRL = $(NEO_DIR)/pixel_controller.vhd
+STRIP_CTRL = $(NEO_DIR)/strip_controller.vhd
+SIGNAL_CTRL = $(NEO_DIR)/signal_controller.vhd
+NEOPIXEL_CTRL = $(NEO_DIR)/neopixel_controller.vhd
+TOP_MODULE = $(SRC_DIR)/top_neopixel.vhd
+TESTBENCH = $(SIM_DIR)/top_neopixel_tb.vhd
+
+# Output files
+VCD_FILE = $(SIM_DIR)/top_neopixel.vcd
+GTKW_FILE = $(SIM_DIR)/top_neopixel.gtkw
+
+# GHDL commands
+GHDL = ghdl
+GHDL_FLAGS = --std=08 --ieee=synopsys
+
+.PHONY: all sim wave clean help
+
+help:
+	@echo "GHDL Simulation Makefile"
+	@echo "Usage:"
+	@echo "  make -f Makefile.ghdl all    - Compile and run simulation"
+	@echo "  make -f Makefile.ghdl sim    - Run simulation only"
+	@echo "  make -f Makefile.ghdl wave   - Open GTKWave with saved settings"
+	@echo "  make -f Makefile.ghdl clean - Clean generated files"
+
+all: sim
+
+# Create work directory
+$(WORK_DIR):
+	mkdir -p $(WORK_DIR)
+
+# Compile pixel_controller
+$(WORK_DIR)/pixel_controller.o: $(PIXEL_CTRL) | $(WORK_DIR)
+	$(GHDL) -a $(GHDL_FLAGS) --workdir=$(WORK_DIR) $<
+
+# Compile strip_controller
+$(WORK_DIR)/strip_controller.o: $(STRIP_CTRL) | $(WORK_DIR)
+	$(GHDL) -a $(GHDL_FLAGS) --workdir=$(WORK_DIR) $<
+
+# Compile signal_controller
+$(WORK_DIR)/signal_controller.o: $(SIGNAL_CTRL) | $(WORK_DIR)
+	$(GHDL) -a $(GHDL_FLAGS) --workdir=$(WORK_DIR) $<
+
+# Compile neopixel_controller (depends on above)
+$(WORK_DIR)/neopixel_controller.o: $(NEOPIXEL_CTRL) \
+	$(WORK_DIR)/pixel_controller.o \
+	$(WORK_DIR)/strip_controller.o \
+	$(WORK_DIR)/signal_controller.o
+	$(GHDL) -a $(GHDL_FLAGS) --workdir=$(WORK_DIR) $<
+
+# Compile top_neopixel (depends on neopixel_controller)
+$(WORK_DIR)/top_neopixel.o: $(TOP_MODULE) \
+	$(WORK_DIR)/neopixel_controller.o
+	$(GHDL) -a $(GHDL_FLAGS) --workdir=$(WORK_DIR) $<
+
+# Compile testbench (depends on top_neopixel)
+$(WORK_DIR)/top_neopixel_tb.o: $(TESTBENCH) \
+	$(WORK_DIR)/top_neopixel.o
+	$(GHDL) -a $(GHDL_FLAGS) --workdir=$(WORK_DIR) $<
+
+# Elaborate testbench
+$(WORK_DIR)/top_neopixel_tb: $(WORK_DIR)/top_neopixel_tb.o
+	$(GHDL) -e $(GHDL_FLAGS) --workdir=$(WORK_DIR) top_neopixel_tb
+
+# Run simulation
+sim: $(WORK_DIR)/top_neopixel_tb
+	@echo "Running simulation..."
+	$(GHDL) -r $(GHDL_FLAGS) --workdir=$(WORK_DIR) top_neopixel_tb \
+		--vcd=$(VCD_FILE) --stop-time=2sec
+	@echo "Simulation complete. VCD file: $(VCD_FILE)"
+
+# Open GTKWave
+wave: $(VCD_FILE)
+	@if [ -f $(GTKW_FILE) ]; then \
+		gtkwave $(GTKW_FILE); \
+	else \
+		gtkwave $(VCD_FILE); \
+	fi
+
+# Clean generated files
+clean:
+	rm -rf $(WORK_DIR)
+	rm -f $(VCD_FILE) $(GTKW_FILE)
+	@echo "Cleaned generated files"
+
+
