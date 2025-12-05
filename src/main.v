@@ -1,4 +1,5 @@
 // Cannot write a testbench for this becuase it mixes Verilog and VHDL
+// Use the Vivado XSIM 
 module main(
     input clk,
     output ws2812_dout
@@ -16,26 +17,7 @@ module main(
         framebuffer[7] = 24'h00FF00;
     end
 
-    reg start = 0;
-    reg state = 0;
-
     wire [5:0] next_px_num;
-
-    always @(posedge clk) begin
-        case (state)
-            0: begin
-                start <= 0;
-                state <= 1;
-            end
-            1: begin
-                start <= 1;
-                state <= 2;
-            end
-            2: begin
-                start <= 0;
-            end
-        endcase
-    end
 
     neopixel_controller #(
         .px_count_width(6),
@@ -44,7 +26,7 @@ module main(
     ) strip (
         .clk(clk),
         .rst(1'b0),
-        .start(start),
+        .start(1'b1),
         .pixel(framebuffer[next_px_num]), // dynamic pixel feed
         .next_px_num(next_px_num),
         .signal_out(ws2812_dout)

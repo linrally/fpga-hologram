@@ -1,6 +1,3 @@
 main.v
-main_tb.v
 RAM.v
 ROM.v
-ws2812_driver.v
-ws2812_driver_tb.v

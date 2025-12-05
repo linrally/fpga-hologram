@@ -1,5 +1,12 @@
-TESTS := $(shell find . -name "*_tb.v")
-RTL := $(shell find . -name "*.v" ! -name "*_tb.v")
+TESTS := $(shell find sim -name "*_tb.v")
+RTL   := $(shell find src -name "*.v")
+
+# main has VHDL modules
+EXCLUDE_TESTS := sim/main_tb.v
+EXCLUDE_RTL = src/main.v
+
+TESTS := $(filter-out $(EXCLUDE_TESTS), $(TESTS))
+RTL := $(filter-out $(EXCLUDE_RTL), $(RTL))
 
 .PHONY: sim
 
