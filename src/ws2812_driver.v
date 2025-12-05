@@ -9,9 +9,9 @@ module ws2812_driver #(
 	output reg busy
 );
 
-	localparam T0H = 20;  
-	localparam T1H = 40;
-	localparam TOTAL = 62;
+	localparam T0H = 17;  
+	localparam T1H = 35;
+	localparam TOTAL = 63;
 
 	localparam IDLE = 0;
 	localparam SEND = 1;
@@ -85,7 +85,7 @@ module ws2812_driver #(
 				busy <= 1;
 				dout <= 0;
 
-				if (timer >= 3000) begin // 60us reset time; requires >= 50us
+				if (timer >= 5000) begin // 100us reset time; requires >= 50us
 						timer <= 0;
 						busy  <= 0;
 						next_state <= IDLE;
