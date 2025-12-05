@@ -63,7 +63,6 @@ module ws2812_driver #(
 
 				if (timer == TOTAL) begin
 					timer <= 0;
-					shift_reg <= {shift_reg[22:0], 1'b0}; // shift left
 					
 					if (bit_idx == 0) begin
 						// next LED
@@ -78,6 +77,7 @@ module ws2812_driver #(
 						end
 					end else begin
 						bit_idx <= bit_idx - 1;
+						shift_reg <= {shift_reg[22:0], 1'b0}; // shift left
 					end
 				end
 			end
