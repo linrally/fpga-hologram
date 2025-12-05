@@ -90,31 +90,36 @@ begin
 
     --------------------------------------------------------------------
     -- Generate color per LED index
-    -- next_px_idx tells us which LED the controller is currently asking for.
-    -- Simple test pattern: first 16 red, next 16 green, last 16 blue.
+    -- Pattern: First 16 LEDs = RED, Next 16 LEDs = GREEN, Last 16 LEDs = BLUE
+    -- Total: 48 LEDs (16 + 16 + 16)
+    -- LED indices: 0-15 = RED, 16-31 = GREEN, 32-47 = BLUE
     --------------------------------------------------------------------
     process(next_px_idx)
         variable idx : integer;
     begin
         idx := to_integer(next_px_idx);
-        if idx < 16 then                -- first third: RED
-            R <= (others => '1');       -- 255
-            G <= (others => '0');
-            B <= (others => '0');
-        elsif idx < 32 then             -- second third: GREEN
-            R <= (others => '0');
-            G <= (others => '1');       -- 255
-            B <= (others => '0');
-        else                            -- last third: BLUE
-            R <= (others => '0');
-            G <= (others => '0');
-            B <= (others => '1');       -- 255
+        
+        -- First 16 LEDs (0-15): RED
+        if idx < 16 then
+            R <= (others => '1');       -- Red = 255 (full brightness)
+            G <= (others => '0');       -- Green = 0
+            B <= (others => '0');       -- Blue = 0
+        -- Next 16 LEDs (16-31): GREEN
+        elsif idx < 32 then
+            R <= (others => '0');       -- Red = 0
+            G <= (others => '1');       -- Green = 255 (full brightness)
+            B <= (others => '0');       -- Blue = 0
+        -- Last 16 LEDs (32-47): BLUE
+        else
+            R <= (others => '0');       -- Red = 0
+            G <= (others => '0');       -- Green = 0
+            B <= (others => '1');       -- Blue = 255 (full brightness)
         end if;
         
-        -- WS2812B expects order G, R, B, MSB first.
-        pixel_bits(0  to 7)  <= G;      -- G7..G0
-        pixel_bits(8  to 15) <= R;      -- R7..R0
-        pixel_bits(16 to 23) <= B;      -- B7..B0
+        -- WS2812B data format: G[7:0], R[7:0], B[7:0] (MSB first for each byte)
+        pixel_bits(0  to 7)  <= G;      -- Bits 0-7:   Green (G7..G0)
+        pixel_bits(8  to 15) <= R;      -- Bits 8-15:  Red (R7..R0)
+        pixel_bits(16 to 23) <= B;      -- Bits 16-23: Blue (B7..B0)
     end process;
 
     --------------------------------------------------------------------
