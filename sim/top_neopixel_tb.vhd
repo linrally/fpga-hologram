@@ -51,37 +51,47 @@ begin
     end process;
 
     -- Stimulus process
+    -- Note: Nexys A7 buttons are active LOW (pressed = 0, not pressed = 1)
+    -- So btn_reset = '0' means reset is active, btn_start = '0' means start is active
     STIM: process
     begin
-        -- Initialize: reset active, start inactive
-        btn_reset <= '1';
-        btn_start <= '0';
+        -- Initialize: reset active (button pressed = LOW), start inactive (button not pressed = HIGH)
+        btn_reset <= '0';  -- Button pressed = reset active
+        btn_start <= '1';  -- Button not pressed = start inactive
         
         -- Wait a few clock cycles for initialization
         wait for CLK_PERIOD * 10;
         
-        -- Release reset
-        btn_reset <= '0';
+        -- Release reset (button not pressed = HIGH)
+        btn_reset <= '1';  -- Button not pressed = reset inactive
         wait for CLK_PERIOD * 10;
         
-        -- At this point, the test signal should start toggling
-        -- (1 Hz square wave, toggles every 0.5 seconds)
+        -- Wait a bit before starting
+        wait for 100 ms;
         
-        -- Wait to observe test signal for 1.5 seconds
-        wait for 1500 ms;
+        -- Press start button to trigger neopixel frame transmission
+        -- Button pressed = LOW, which becomes start = HIGH in the design
+        btn_start <= '0';  -- Button pressed = start active
+        wait for 10 ms;    -- Hold button for a short time
+        btn_start <= '1';  -- Release button = start inactive
         
-        -- Test button press (simulate button press)
-        -- Note: On Nexys A7, buttons are active LOW, but for simulation
-        -- we'll test both active high and active low scenarios
-        btn_start <= '1';
-        wait for CLK_PERIOD * 100;
-        btn_start <= '0';
-        wait for CLK_PERIOD * 100;
+        -- Wait to observe neopixel signal transmission
+        -- Frame transmission takes: 48 LEDs * 24 bits * 1.25us = ~1.44ms
+        -- Plus 100us latch time = ~1.54ms total
+        wait for 5 ms;
         
-        -- Test reset button
-        btn_reset <= '1';
+        -- Test another frame transmission
+        btn_start <= '0';  -- Press start button again
+        wait for 10 ms;
+        btn_start <= '1';  -- Release
+        
+        -- Wait to observe
+        wait for 5 ms;
+        
+        -- Test reset button (press reset = button LOW)
+        btn_reset <= '0';  -- Button pressed = reset active
         wait for CLK_PERIOD * 100;
-        btn_reset <= '0';
+        btn_reset <= '1';  -- Release reset
         wait for CLK_PERIOD * 100;
         
         -- Continue observing for remainder of simulation

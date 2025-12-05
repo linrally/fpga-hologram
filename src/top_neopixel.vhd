@@ -47,9 +47,8 @@ architecture Behavioral of top_neopixel is
     signal btn_reset_ff1, btn_reset_ff2 : STD_LOGIC := '0';
     signal btn_start_ff1, btn_start_ff2 : STD_LOGIC := '0';
     
-    -- Edge detection for start button (single pulse)
+    -- Edge detection for start button
     signal start_sync_prev : STD_LOGIC := '0';
-    signal start_pulse     : STD_LOGIC := '0';
     
     -- Test signal for oscilloscope verification
     signal test_counter : unsigned(26 downto 0) := (others => '0');
@@ -59,7 +58,8 @@ architecture Behavioral of top_neopixel is
 begin
 
     --------------------------------------------------------------------
-    -- Simple 2-FF sync for reset button (active high)
+    -- Simple 2-FF sync for reset button
+    -- Nexys A7 buttons are active LOW (pressed = 0), so we invert
     --------------------------------------------------------------------
     process(clk_100mhz)
     begin
@@ -68,11 +68,12 @@ begin
             btn_reset_ff2 <= btn_reset_ff1;
         end if;
     end process;
-    rst_sync <= btn_reset_ff2;
+    rst_sync <= not btn_reset_ff2;  -- Invert: button pressed (0) = reset active (1)
 
     --------------------------------------------------------------------
     -- Simple 2-FF sync for start button with edge detection
-    -- Generates a single pulse when button is pressed
+    -- Nexys A7 buttons are active LOW (pressed = 0)
+    -- Detect falling edge (button press) and generate pulse
     --------------------------------------------------------------------
     process(clk_100mhz)
     begin
@@ -83,9 +84,9 @@ begin
         end if;
     end process;
     
-    -- Generate pulse on rising edge
-    start_pulse <= btn_start_ff2 and not start_sync_prev;
-    start_sync <= start_pulse;
+    -- Hold start signal while button is pressed (inverted: button LOW = start HIGH)
+    -- Nexys A7 buttons are active LOW, so invert to get active HIGH start signal
+    start_sync <= not btn_start_ff2;
 
     --------------------------------------------------------------------
     -- Generate color per LED index
@@ -160,10 +161,9 @@ begin
 
     --------------------------------------------------------------------
     -- OUTPUT SELECTION: Test mode vs Normal mode
-    -- Uncomment the line you want to use:
     --------------------------------------------------------------------
-    led_data <= test_output;  -- TEST MODE: 1 Hz square wave (easy to see on scope)
-    -- led_data <= neopixel_out;  -- NORMAL MODE: Neopixel signal (uncomment when ready)
+    -- led_data <= test_output;  -- TEST MODE: 1 Hz square wave (easy to see on scope)
+    led_data <= neopixel_out;  -- NORMAL MODE: Neopixel signal
 
 end Behavioral;
 
