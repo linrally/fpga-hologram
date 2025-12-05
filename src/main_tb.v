@@ -17,7 +17,8 @@ module main_tb;
     );
 
     initial begin
-        repeat (10000) @(posedge clk);
+        // Wait for approximately one second (at 50MHz clock)
+        repeat (50_000) @(posedge clk);
         $finish;
     end
 endmodule

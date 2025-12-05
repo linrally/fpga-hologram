@@ -8,7 +8,16 @@ module ws2812_driver_tb;
     reg clk = 0;
     reg reset = 0;
     reg start = 0;
-    reg [LED_COUNT*24-1:0] data;
+    reg [LED_COUNT*24-1:0] data = {
+        24'hFF0000,
+        24'h00FF00,
+        24'h0000FF,
+        24'hFF0000,
+        24'h00FF00,
+        24'h0000FF,
+        24'hFF0000,
+        24'h00FF00
+    };
     integer i;
 
     wire dout;
@@ -31,12 +40,19 @@ module ws2812_driver_tb;
     end
 
     initial begin
-        for (i = 0; i < LED_COUNT; i = i + 1)
-            data[i*24 +: 24] = 24'hFF0000 >> i;  
-
         start = 1;
         @(posedge clk);   
         @(posedge clk); // only holding high for one cycle leads to hanging
+        start = 0;
+
+        wait (busy == 1);
+        wait (busy == 0);
+
+        repeat (20) @(posedge clk);
+
+        start = 1;
+        @(posedge clk);
+        @(posedge clk);
         start = 0;
 
         wait (busy == 1);

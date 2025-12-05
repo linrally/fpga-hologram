@@ -82,11 +82,10 @@ module ws2812_driver #(
 			end
 
 			TRESET: begin 
-				// hold low for 50us
 				busy <= 1;
 				dout <= 0;
 
-				if (timer >= 2500) begin
+				if (timer >= 3000) begin // 60us reset time; requires >= 50us
 						timer <= 0;
 						busy  <= 0;
 						next_state <= IDLE;
