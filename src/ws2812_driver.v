@@ -9,9 +9,10 @@ module ws2812_driver #(
 	output reg busy
 );
 
-	localparam T0H = 17;  
-	localparam T1H = 35;
-	localparam TOTAL = 63;
+	// 800 kHz transmission rate
+	localparam T0H = 17; // 340 ns
+	localparam T1H = 35; // 700 ns
+	localparam TOTAL = 63; // 1.26 us
 
 	localparam IDLE = 0;
 	localparam SEND = 1;
@@ -20,7 +21,7 @@ module ws2812_driver #(
 	reg [5:0] bit_idx = 0;
 	reg [15:0] led_idx = 0;
 	reg [23:0] shift_reg = 24'd0;
-	reg [11:0]  timer = 0;
+	reg [16:0]  timer = 0; // make sure this is big enough to hold the total time for reset pulse
 
 	reg [2:0] cur_state  = IDLE;
 	reg [2:0] next_state = IDLE;
