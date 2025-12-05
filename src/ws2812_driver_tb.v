@@ -26,7 +26,7 @@ module ws2812_driver_tb;
     always #10 clk = ~clk; // 50 MHz
 
     initial begin
-        $dumpfile("ws2812_driver_tb.vcd");
+        $dumpfile("sim/ws2812_driver_tb.vcd");
         $dumpvars(0, ws2812_driver_tb);
     end
 

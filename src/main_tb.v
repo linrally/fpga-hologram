@@ -5,9 +5,16 @@ module main_tb;
     always #10 clk = ~clk; // 50 MHz
 
     initial begin
-        $dumpfile("main.vcd");
+        $dumpfile("sim/main_tb.vcd");
         $dumpvars(0, main_tb);
     end
+
+    wire ws2812_dout;
+
+    main dut (
+        .clk(clk),
+        .ws2812_dout(ws2812_dout)
+    );
 
     initial begin
         repeat (10000) @(posedge clk);

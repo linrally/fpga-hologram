@@ -5,9 +5,10 @@ RTL := $(shell find . -name "*.v" ! -name "*_tb.v")
 
 sim:
 	@for tb in $(TESTS); do \
+		base=$$(basename $$tb .v); \
 		echo "Running $$tb..."; \
-		iverilog -o sim/sim $(RTL) $$tb || exit 1; \
-		vvp sim/sim || exit 1; \
+		iverilog -o sim/$$base $(RTL) $$tb || exit 1; \
+		vvp sim/$$base || exit 1; \
 	done
 	@echo "All tests passed!"
 

@@ -4,15 +4,16 @@ module main(
 );
     localparam LED_COUNT = 8;
 
+    // color order: G R B
     reg [LED_COUNT*24-1:0] data = {
         24'hFF0000,
         24'h00FF00,
         24'h0000FF,
-        24'hFFFFFF,
-        24'h000000,
-        24'h000000,
-        24'h000000,
-        24'h000000
+        24'hFF0000,
+        24'h00FF00,
+        24'h0000FF,
+        24'hFF0000,
+        24'h00FF00
     };
 
     reg start = 0;
