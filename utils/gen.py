@@ -1,5 +1,5 @@
 """
-python gen.py image.png ../src/texture.mem
+python utils/gen.py image.png src/texture.mem
 """
 from PIL import Image
 import numpy as np
@@ -14,9 +14,9 @@ def avg_color(img, x0, y0, x1, y1):
         return (0, 0, 0)
     return tuple(region.reshape(-1, 3).mean(axis=0).astype(int))
 
-def to_hex(rgb):
+def to_hex_grb(rgb):
     r, g, b = rgb
-    return f"{r:02X}{g:02X}{b:02X}"
+    return f"{g:02X}{r:02X}{b:02X}"
 
 def main():
     input_file = sys.argv[1]
@@ -39,7 +39,7 @@ def main():
                 y1 = int((row + 1) * cell_h)
 
                 rgb = avg_color(img, x0, y0, x1, y1)
-                f.write(to_hex(rgb) + "\n")
+                f.write(to_hex_grb(rgb) + "\n")
 
                 preview.putpixel((col, row), rgb)
     

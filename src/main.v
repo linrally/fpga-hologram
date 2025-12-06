@@ -45,7 +45,7 @@ module main(
     reg [31:0] timer = 0;
 
     always @(posedge clk) begin
-        if (timer < 100_000_00) // 10ms
+        if (timer < 100_000_00) // 100ms
             timer <= timer + 1;
         else begin
             timer <= 0;
