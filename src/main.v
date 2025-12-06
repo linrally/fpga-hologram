@@ -1,11 +1,14 @@
 // Cannot write a testbench for this becuase it mixes Verilog and VHDL
 // Use the Vivado XSIM 
 module main(
-    input  wire clk,
-    output wire ws2812_dout
+    input wire clk,
+    input wire break_din,
+    output wire ws2812_dout,
+    output wire [0:0] LED
 );
+    assign LED = break_din; // use LED to track breakbeam for debugging
 
-    localparam LED_COUNT  = 32;
+    localparam LED_COUNT  = 52;
     localparam TEX_WIDTH  = 256;
 
     reg [5:0] theta = 0;
