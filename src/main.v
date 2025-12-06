@@ -22,6 +22,7 @@ module main(
     ROM #(
         .DATA_WIDTH(24),
         .ADDRESS_WIDTH($clog2(TEX_WIDTH*LED_COUNT)),
+        .DEPTH(TEX_WIDTH*LED_COUNT),
         .MEMFILE("texture.mem")
     ) rom (
         .clk(clk),
@@ -45,7 +46,7 @@ module main(
     reg [31:0] timer = 0;
 
     always @(posedge clk) begin
-        if (timer < 100_000_00) // 100ms
+        if (timer < 100_000_00) // 10ms
             timer <= timer + 1;
         else begin
             timer <= 0;
