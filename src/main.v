@@ -1,8 +1,13 @@
+`timescale 1ns/1ps
+
 // Cannot write a testbench for this becuase it mixes Verilog and VHDL
 // Use the Vivado XSIM 
 module main(
     input  wire clk,
-    output wire ws2812_dout
+    output wire ws2812_dout,
+    // Debug ports for testbench access
+    output wire [23:0] pixel_color_debug,
+    output wire [5:0] next_px_num_debug
 );
 
     localparam LED_COUNT  = 48;
@@ -13,6 +18,10 @@ module main(
 
     wire [5:0] next_px_num;
     wire [23:0] pixel_color;
+
+    // Assign debug ports for testbench access
+    assign pixel_color_debug = pixel_color;
+    assign next_px_num_debug = next_px_num;
 
     // Rainbow generator: produces cycling rainbow pattern
     rainbow_generator #(

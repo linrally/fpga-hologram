@@ -3,8 +3,15 @@
 module main_tb;
     reg clk = 0;
     wire ws2812_dout;
+    wire [23:0] pixel_color_debug;
+    wire [5:0] next_px_num_debug;
 
-    main dut(.clk(clk), .ws2812_dout(ws2812_dout));
+    main dut(
+        .clk(clk), 
+        .ws2812_dout(ws2812_dout),
+        .pixel_color_debug(pixel_color_debug),
+        .next_px_num_debug(next_px_num_debug)
+    );
 
     // Clock generation: 100 MHz (10ns period, 5ns half-period)
     always #5 clk = ~clk;
@@ -23,9 +30,9 @@ module main_tb;
     integer segment_85_169_count = 0;
     integer segment_170_255_count = 0;
 
-    // Access internal signals using hierarchical paths (Vivado XSIM supports this)
-    wire [23:0] pixel_color = dut.pixel_color;
-    wire [5:0] next_px_num = dut.next_px_num;
+    // Access internal signals via debug ports
+    wire [23:0] pixel_color = pixel_color_debug;
+    wire [5:0] next_px_num = next_px_num_debug;
 
     // Extract RGB components from GRB format
     wire [7:0] green = pixel_color[7:0];
