@@ -121,12 +121,12 @@ begin
     end process;
     
     -- Output format for WS2812B: GRB (Green, Red, Blue)
-    -- pixel_bits(0 to 7) = Green
-    -- pixel_bits(8 to 15) = Red
-    -- pixel_bits(16 to 23) = Blue
-    pixel_bits(0 to 7) <= std_logic_vector(green_component);
-    pixel_bits(8 to 15) <= std_logic_vector(red_component);
-    pixel_bits(16 to 23) <= std_logic_vector(blue_component);
+    -- pixel_bits(7 downto 0) = Green
+    -- pixel_bits(15 downto 8) = Red
+    -- pixel_bits(23 downto 16) = Blue
+    pixel_bits(7 downto 0) <= std_logic_vector(green_component);
+    pixel_bits(15 downto 8) <= std_logic_vector(red_component);
+    pixel_bits(23 downto 16) <= std_logic_vector(blue_component);
     
 end Behavioral;
 
