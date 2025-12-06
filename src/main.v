@@ -20,6 +20,8 @@ module main(
     wire [23:0] pixel_color;
 
     // Assign debug ports for testbench access
+    // These will be optimized away during synthesis if not used, which is fine
+    // For simulation, they provide access to internal signals
     assign pixel_color_debug = pixel_color;
     assign next_px_num_debug = next_px_num;
 

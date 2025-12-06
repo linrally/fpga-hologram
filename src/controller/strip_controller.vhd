@@ -45,7 +45,8 @@ begin
     end process;
 
     -- next state decision logic
-    NEXT_STATE_DECODE: process(state, clk, start, current_px)
+    -- Include all signals read in the process in sensitivity list
+    NEXT_STATE_DECODE: process(state, clk, start, current_px, px_done, latch_counter)
     begin
         next_state <= state;
         case ( state ) is
