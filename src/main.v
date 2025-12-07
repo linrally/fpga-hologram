@@ -163,9 +163,11 @@ module main(
     wire [23:0] pov_pixel_color;
     wire cpu_pov_rden = !cpu_mwe && is_pov_access;  // Read enable for lw instruction
     
+    // POV peripheral reset: only reset on power-on, not tied to CPU reset
+    // This allows framebuffer to persist even when CPU resets
     pov_peripheral pov_periph(
         .clk(clk),
-        .reset(cpu_reset),
+        .reset(1'b0),  // Don't tie to cpu_reset - let framebuffer persist
         .cpu_addr(cpu_mem_addr),
         .cpu_data_in(cpu_mem_data_in),
         .cpu_wren(cpu_mwe && is_pov_access),

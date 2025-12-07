@@ -69,12 +69,15 @@ module pov_peripheral(
     end
     
     // CPU write interface
+    // Allow writes even during reset (CPU might write before reset is released)
     always @(posedge clk) begin
         if (reset) begin
             col_addr_reg <= 8'h00;
             pixel_data_reg <= 24'h000000;
             ctrl_reg <= 8'h00;
-        end else if (cpu_wren) begin
+        end
+        // Process writes even during reset (CPU might be writing)
+        if (cpu_wren) begin
             case (cpu_addr)
                 POV_COL_ADDR: begin
                     col_addr_reg <= cpu_data_in[7:0];
@@ -114,13 +117,11 @@ module pov_peripheral(
         end
     end
     
-    // Output current column's color (combinational read from framebuffer)
+    // Output current column's color (read from framebuffer)
+    // Always output framebuffer contents, regardless of reset state
+    // This allows the framebuffer to be visible even during CPU reset
     always @(posedge clk) begin
-        if (reset) begin
-            pixel_color <= 24'h000000;
-        end else begin
-            pixel_color <= framebuffer[current_col];
-        end
+        pixel_color <= framebuffer[current_col];
     end
 
 endmodule
