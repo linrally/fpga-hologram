@@ -9,7 +9,7 @@ import math
 # Parameters
 TEX_WIDTH = 256   # Number of angular columns (rotation angles)
 LED_COUNT = 52    # Number of LEDs on the strip
-CUBE_SIZE = 0.6   # Cube size (scale factor, smaller = more visible edges)
+CUBE_SIZE = 0.8   # Cube size (scale factor, larger = more visible)
 
 # Cube vertices (8 corners) - scaled by CUBE_SIZE
 vertices = [
@@ -48,54 +48,106 @@ def rotate_y(vertices, angle):
         rotated.append([x_new, y_new, z_new])
     return rotated
 
-def project_to_column(x, y, z):
+def project_to_2d(x, y, z):
     """
-    Project 3D point to 1D column index for POV display
-    Simple projection: use x coordinate (after rotation)
-    Maps x from [-1, 1] to column [0, 255]
+    Project 3D point to 2D (column, LED) for POV display
+    - Column (X): based on x coordinate after rotation, maps to [0, 255]
+    - LED (Y): based on y coordinate, maps to [0, LED_COUNT-1]
     """
-    # Clamp x to [-1, 1] range
+    # Project X to column
     x_clamped = max(-1.0, min(1.0, x))
-    # Map [-1, 1] to [0, 255]
     col = int((x_clamped + 1.0) * 127.5)
-    return max(0, min(255, col))
-
-def draw_line_1d(framebuffer, col1, col2, brightness=255):
-    """
-    Draw a line in 1D framebuffer between col1 and col2
-    Uses thick edges (3 columns) for low-RPM visibility
-    """
-    thickness = 1  # Light col±1 (3 columns total)
-    start_col = min(col1, col2)
-    end_col = max(col1, col2)
+    col = max(0, min(255, col))
     
-    # Light all columns in the range, plus thickness on each side
-    for col in range(max(0, start_col - thickness), min(256, end_col + thickness + 1)):
-        framebuffer[col] = max(framebuffer[col], brightness)
+    # Project Y to LED index
+    # Map y from [-CUBE_SIZE, CUBE_SIZE] to [0, LED_COUNT-1]
+    # Center the cube vertically
+    y_normalized = (y + CUBE_SIZE) / (2 * CUBE_SIZE)  # [0, 1]
+    led = int(y_normalized * (LED_COUNT - 1))
+    led = max(0, min(LED_COUNT - 1, led))
+    
+    return col, led
 
-def generate_cube_column(angle):
+def draw_line_2d(framebuffer, x1, y1, x2, y2):
     """
-    Generate one column of the rotating cube at given angle
-    Returns: column data (256 entries, one per column index)
-    The cube is the same for all LEDs, so we generate one pattern per angle
+    Draw a line in 2D framebuffer using Bresenham's line algorithm
+    Ensures all pixels along the line are drawn
+    """
+    # Convert to integers
+    x1, y1, x2, y2 = int(round(x1)), int(round(y1)), int(round(x2)), int(round(y2))
+    
+    # Clamp to framebuffer bounds
+    x1 = max(0, min(TEX_WIDTH - 1, x1))
+    y1 = max(0, min(LED_COUNT - 1, y1))
+    x2 = max(0, min(TEX_WIDTH - 1, x2))
+    y2 = max(0, min(LED_COUNT - 1, y2))
+    
+    dx = abs(x2 - x1)
+    dy = abs(y2 - y1)
+    sx = 1 if x1 < x2 else -1
+    sy = 1 if y1 < y2 else -1
+    err = dx - dy
+    
+    x, y = x1, y1
+    
+    while True:
+        # Set pixel
+        framebuffer[y][x] = 255
+        
+        # Also set adjacent pixels for thickness (makes edges more visible)
+        if x > 0:
+            framebuffer[y][x-1] = max(framebuffer[y][x-1], 255)
+        if x < TEX_WIDTH - 1:
+            framebuffer[y][x+1] = max(framebuffer[y][x+1], 255)
+        if y > 0:
+            framebuffer[y-1][x] = max(framebuffer[y-1][x], 255)
+        if y < LED_COUNT - 1:
+            framebuffer[y+1][x] = max(framebuffer[y+1][x], 255)
+        
+        if x == x2 and y == y2:
+            break
+        
+        e2 = 2 * err
+        if e2 > -dy:
+            err -= dy
+            x += sx
+        if e2 < dx:
+            err += dx
+            y += sy
+
+def generate_cube_frame(angle):
+    """
+    Generate a 2D framebuffer for the rotating cube at given angle
+    Returns: 2D array [LED_COUNT][TEX_WIDTH] indicating which pixels should be lit
     """
     # Rotate vertices
     rotated_vertices = rotate_y(vertices, angle)
     
-    # Project vertices to column indices (where they appear in the 1D projection)
-    projected_cols = [project_to_column(v[0], v[1], v[2]) for v in rotated_vertices]
+    # Project all vertices to 2D (col, led)
+    # Use floating point for more precision
+    projected_2d = []
+    for v in rotated_vertices:
+        x, y, z = v[0], v[1], v[2]
+        # Project X to column (floating point)
+        x_clamped = max(-1.0, min(1.0, x))
+        col = (x_clamped + 1.0) * 127.5
+        
+        # Project Y to LED (floating point)
+        y_normalized = (y + CUBE_SIZE) / (2 * CUBE_SIZE)  # [0, 1]
+        led = y_normalized * (LED_COUNT - 1)
+        
+        projected_2d.append((col, led))
     
-    # Create column framebuffer: 256 columns (one per possible column index)
-    # This represents what columns should be lit for this rotation angle
-    column_fb = [0 for _ in range(TEX_WIDTH)]
+    # Create 2D framebuffer: LED_COUNT rows × TEX_WIDTH columns
+    framebuffer = [[0 for _ in range(TEX_WIDTH)] for _ in range(LED_COUNT)]
     
-    # Draw edges with thickness
+    # Draw edges using Bresenham line algorithm
     for v1_idx, v2_idx in edges:
-        col1 = projected_cols[v1_idx]
-        col2 = projected_cols[v2_idx]
-        draw_line_1d(column_fb, col1, col2, brightness=255)
+        col1, led1 = projected_2d[v1_idx]
+        col2, led2 = projected_2d[v2_idx]
+        draw_line_2d(framebuffer, col1, led1, col2, led2)
     
-    return column_fb
+    return framebuffer
 
 def main():
     output_file = "src/cube.mem"
@@ -110,8 +162,8 @@ def main():
     rotation_frames = []
     for angle_idx in range(TEX_WIDTH):
         angle = (angle_idx / TEX_WIDTH) * 2 * math.pi
-        column_fb = generate_cube_column(angle)
-        rotation_frames.append(column_fb)
+        frame_2d = generate_cube_frame(angle)
+        rotation_frames.append(frame_2d)
         if (angle_idx + 1) % 64 == 0:
             print(f"    Computed {angle_idx + 1}/{TEX_WIDTH} frames...")
     
@@ -123,18 +175,17 @@ def main():
         # For address = LED * 256 + col:
         #   - 'col' is the angular viewing position (0-255)
         #   - We show the cube rotated by angle = col * 2π / 256
-        #   - The cube's edges project to certain column indices
-        #   - We check if viewing column 'col' matches any projected edge columns
+        #   - rotation_frames[col] is a 2D array [LED_COUNT][TEX_WIDTH]
+        #   - rotation_frames[col][led][col] tells us if pixel (led, col) should be lit
         
         for led in range(LED_COUNT):
             for col in range(TEX_WIDTH):
                 # Get the rotation frame for this viewing angle
                 # When viewing from angular position 'col', show cube at rotation angle 'col'
-                rotation_frame = rotation_frames[col]
+                frame_2d = rotation_frames[col]
                 
-                # Check if this viewing column 'col' is lit in the rotation frame
-                # rotation_frame[col] tells us if column 'col' should be lit when cube is at rotation angle 'col'
-                brightness = rotation_frame[col]
+                # Check if this (LED, column) pixel is lit in the rotation frame
+                brightness = frame_2d[led][col]
                 
                 # Convert to RGB (white for edges, black for background)
                 if brightness > 0:
