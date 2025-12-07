@@ -108,9 +108,12 @@
 .text
 main:
     # Initialize base addresses
-    addi $1, $0, 0xFFFF      # Upper 16 bits of POV base
-    sll $1, $1, 16            # Shift to upper 16 bits
-    addi $1, $1, 0x0000       # POV base = 0xFFFF0000
+    # CRITICAL FIX: 0xFFFF sign-extends to 0xFFFFFFFF in 17-bit immediate
+    # We need to build 0xFFFF0000 differently
+    # Method: Load 0xFFFF into lower 16 bits, then shift left 16
+    addi $1, $0, -1           # Load 0xFFFFFFFF (all 1s) - this works because -1 = 0xFFFFFFFF
+    sll $1, $1, 16            # Shift left 16: 0xFFFF0000
+    # Now $1 = 0xFFFF0000 (correct!)
     
     # ========================================================================
     # TEST PATTERN: Write bright colors to verify POV peripheral works
@@ -391,7 +394,16 @@ decay_fb_loop:
     lw $25, 0($5)             # Load current pixel
     sra $25, $25, 1           # Shift right by 1 (decay brightness)
     # Mask to 24 bits (clear upper 8 bits) - andi not supported, use workaround
-    addi $29, $0, 0x00FFFFFF  # Load mask into $29
+    # Build 0x00FFFFFF: Load -1 (0xFFFFFFFF), then mask upper 8 bits
+    addi $29, $0, -1           # Load 0xFFFFFFFF
+    sll $29, $29, 8            # Shift left 8: 0xFFFFFF00
+    sra $29, $29, 8            # Arithmetic shift right 8: 0x00FFFFFF (sign-extend, but we mask)
+    # Actually simpler: just use the lower 24 bits directly
+    # Since we're doing and, we can use: and with 0xFFFFFFFF then mask
+    # Better: Load 0x00FF into upper, then combine
+    addi $29, $0, 0x00FF       # Load 0x00FF (8 bits, fits in immediate)
+    sll $29, $29, 16           # Shift to upper 16: 0x00FF0000
+    addi $29, $29, 0xFFFF      # Add 0xFFFF: 0x00FFFFFF
     and $25, $25, $29         # and $25, $25, $29 (mask to 24 bits)
     sw $25, 0($5)             # Store decayed pixel
     addi $5, $5, 4
