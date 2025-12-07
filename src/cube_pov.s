@@ -112,6 +112,91 @@ main:
     sll $1, $1, 16            # Shift to upper 16 bits
     addi $1, $1, 0x0000       # POV base = 0xFFFF0000
     
+    # ========================================================================
+    # TEST PATTERN: Write bright colors to verify POV peripheral works
+    # ========================================================================
+    # This writes red, green, blue, and white to columns 0, 64, 128, 192
+    # If you see these colors when spinning, the POV peripheral is working!
+    
+    # Write RED to column 0
+    addi $5, $0, 0            # Column 0
+    sw $5, 0($1)              # POV_COL_ADDR = 0xFFFF0000
+    addi $5, $0, 0x00FF       # Red color upper bits
+    sll $5, $5, 8
+    addi $5, $5, 0x0000       # POV_PIXEL_DATA = 0x00FF0000 (red)
+    addi $6, $1, 4
+    sw $5, 0($6)              # POV_PIXEL_DATA = 0xFFFF0004
+    addi $6, $1, 8
+    sw $0, 0($6)              # POV_WRITE = 0xFFFF0008 (trigger)
+    
+    # Write GREEN to column 64
+    addi $5, $0, 64           # Column 64
+    sw $5, 0($1)              # POV_COL_ADDR
+    addi $5, $0, 0x0000       # Green color
+    sll $5, $5, 8
+    addi $5, $5, 0xFF00       # POV_PIXEL_DATA = 0x0000FF00 (green)
+    addi $6, $1, 4
+    sw $5, 0($6)              # POV_PIXEL_DATA
+    addi $6, $1, 8
+    sw $0, 0($6)              # POV_WRITE trigger
+    
+    # Write BLUE to column 128
+    addi $5, $0, 128          # Column 128
+    sw $5, 0($1)              # POV_COL_ADDR
+    addi $5, $0, 0x0000       # Blue color
+    sll $5, $5, 8
+    addi $5, $5, 0x00FF       # POV_PIXEL_DATA = 0x000000FF (blue)
+    addi $6, $1, 4
+    sw $5, 0($6)              # POV_PIXEL_DATA
+    addi $6, $1, 8
+    sw $0, 0($6)              # POV_WRITE trigger
+    
+    # Write WHITE to column 192
+    addi $5, $0, 192          # Column 192
+    sw $5, 0($1)              # POV_COL_ADDR
+    addi $5, $0, 0x00FF       # White color upper bits
+    sll $5, $5, 8
+    addi $5, $5, 0xFFFF       # POV_PIXEL_DATA = 0x00FFFFFF (white)
+    addi $6, $1, 4
+    sw $5, 0($6)              # POV_PIXEL_DATA
+    addi $6, $1, 8
+    sw $0, 0($6)              # POV_WRITE trigger
+    
+    # Also write WHITE to a few more columns for visibility
+    addi $5, $0, 1            # Column 1
+    sw $5, 0($1)
+    addi $5, $0, 0x00FF
+    sll $5, $5, 8
+    addi $5, $5, 0xFFFF       # White
+    addi $6, $1, 4
+    sw $5, 0($6)
+    addi $6, $1, 8
+    sw $0, 0($6)
+    
+    addi $5, $0, 2            # Column 2
+    sw $5, 0($1)
+    addi $5, $0, 0x00FF
+    sll $5, $5, 8
+    addi $5, $5, 0xFFFF       # White
+    addi $6, $1, 4
+    sw $5, 0($6)
+    addi $6, $1, 8
+    sw $0, 0($6)
+    
+    addi $5, $0, 3            # Column 3
+    sw $5, 0($1)
+    addi $5, $0, 0x00FF
+    sll $5, $5, 8
+    addi $5, $5, 0xFFFF       # White
+    addi $6, $1, 4
+    sw $5, 0($6)
+    addi $6, $1, 8
+    sw $0, 0($6)
+    
+    # ========================================================================
+    # End of test pattern - continue with normal initialization
+    # ========================================================================
+    
     addi $2, $0, 0x1000       # Data section base address
     
     # Initialize stack pointer (grow downward from 0x2000)
