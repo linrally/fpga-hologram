@@ -1,7 +1,7 @@
 module main(
     input  wire clk,         
     input  wire reset,
-    input  wire BTNU
+    input  wire BTNU,
     input  wire break_din,   
     output wire ws2812_dout, 
     output wire [0:0] LED    
@@ -44,16 +44,26 @@ module main(
     wire [$clog2(TEX_WIDTH*LED_COUNT)-1:0] rom_addr;
     assign rom_addr = next_px_num * TEX_WIDTH + col;
 
-    ROM #(
-        .DATA_WIDTH   (24),
-        .ADDRESS_WIDTH($clog2(TEX_WIDTH*LED_COUNT)),
-        .DEPTH        (TEX_WIDTH*LED_COUNT),
-        .MEMFILE      ("texture.mem")
-    ) rom (
-        .clk    (clk),
-        .addr   (rom_addr),
-        .dataOut(pixel_color)
-    );
+    wire [3:0] texture_idx;
+
+    wire [23:0] tex0_data, tex1_data, tex2_data;
+
+    ROM #(.DATA_WIDTH(24), .ADDRESS_WIDTH($clog2(TEX_WIDTH*LED_COUNT)), .DEPTH(TEX_WIDTH*LED_COUNT), .MEMFILE("texture.mem"))
+        tex0_rom (.clk(clk), .addr(rom_addr), .dataOut(tex0_data));
+
+    ROM #(.DATA_WIDTH(24), .ADDRESS_WIDTH($clog2(TEX_WIDTH*LED_COUNT)), .DEPTH(TEX_WIDTH*LED_COUNT), .MEMFILE("texture1.mem"))
+        tex1_rom (.clk(clk), .addr(rom_addr), .dataOut(tex1_data));
+    
+    // Is this better than a combinatorial mux?
+    reg [23:0] pixel_color_r;
+    always @(*) begin
+        case (texture_idx)
+            4'd0: pixel_color_r = tex0_data;
+            4'd1: pixel_color_r = tex1_data;
+            default: pixel_color_r = tex0_data; // safe fallback
+        endcase
+    end
+    assign pixel_color = pixel_color_r;
 
     neopixel_controller #(
         .px_count_width (6),
@@ -114,6 +124,6 @@ module main(
 		.dataIn(memDataIn), 
 		.dataOut(memDataOutRaw));
 	
-	MMIO MMIO(.addr(memAddr[11:0]), .data(memDataOutRaw), .data_out(memDataOut), .BTNU(BTNU));
+	MMIO mmio(.addr(memAddr[11:0]), .mwe(mwe), .data(memDataOutRaw), .data_out(memDataOut), .BTNU(BTNU), .texture_idx(texture_idx));
 
 endmodule
