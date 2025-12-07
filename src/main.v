@@ -184,7 +184,31 @@ module main(
     // 5) Mode selection: choose between globe and CPU cube
     // ------------------------------------------------------------
     wire [23:0] selected_pixel_color;
-    assign selected_pixel_color = mode_sel ? pov_pixel_color : pixel_color;
+    wire [23:0] test_pattern_color;  // Hardware test pattern for debugging
+    
+    // Hardware test pattern: shows a simple gradient pattern based on theta
+    // This helps verify mode selection and POV peripheral path work
+    // Pattern: bright gradient from red to green to blue based on column
+    wire [7:0] test_col;
+    assign test_col = {theta, 2'b00};  // Same as POV peripheral column calculation
+    
+    // Create simple bright gradient: red -> green -> blue
+    // Split 256 columns into 3 segments for maximum brightness and visibility
+    wire [7:0] test_r, test_g, test_b;
+    
+    // Simple approach: use column value directly for smooth gradient
+    // Red: high at start, fade to 0
+    // Green: fade in, peak in middle, fade out
+    // Blue: start at 0, fade in to full
+    assign test_r = (test_col < 128) ? (8'd255 - test_col[7:0]) : 8'h00;
+    assign test_g = (test_col < 128) ? test_col[7:0] : (8'd255 - (test_col - 8'd128));
+    assign test_b = (test_col < 128) ? 8'h00 : (test_col - 8'd128);
+    
+    assign test_pattern_color = {test_r, test_g, test_b};
+    
+    // Select: test pattern if mode_sel=1, globe if mode_sel=0
+    // TODO: Once CPU works, change to: mode_sel ? pov_pixel_color : pixel_color
+    assign selected_pixel_color = mode_sel ? test_pattern_color : pixel_color;
     
     // ------------------------------------------------------------
     // 6) Neopixel controller (VHDL entity)
