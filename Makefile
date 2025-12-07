@@ -74,3 +74,6 @@ sim-proc:
 		fi; \
 	done < $$args; \
 	echo "\033[1;32mProcessor tests passed!\033[0m"
+
+assemble: 
+	python3 assembler/assemble.py src/main.s -o src/main.mem

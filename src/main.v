@@ -1,22 +1,15 @@
-// main.v
-// Top-level for POV display with WS2812 and break-beam angle locking
-
 module main(
-    input  wire clk,          // 100 MHz board clock
-    input  wire break_din,    // IR break-beam sensor input
-    output wire ws2812_dout,  // data out to WS2812 strip
-    output wire [0:0] LED     // debug LED
+    input  wire clk,         
+    input  wire break_din,   
+    output wire ws2812_dout, 
+    output wire [0:0] LED    
 );
-    // Debug: mirror raw break-beam input on LED
+    //--------------------------------  MAPPER UNIT  --------------------------------
     assign LED = break_din;
 
-    // Texture dimensions
-    localparam LED_COUNT  = 52;   // number of LEDs on strip
-    localparam TEX_WIDTH  = 256;  // columns around the circle
+    localparam LED_COUNT  = 52;
+    localparam TEX_WIDTH  = 256;
 
-    // ------------------------------------------------------------
-    // 1) Debounce / synchronize break-beam signal into clk domain
-    // ------------------------------------------------------------
     wire break_clean;
 
     breakbeam_sync_debounce deb (
@@ -25,9 +18,6 @@ module main(
         .din_clean(break_clean)
     );
 
-    // ------------------------------------------------------------
-    // 2) Generate angular position theta (0..63) from break-beam
-    // ------------------------------------------------------------
     wire [5:0] theta;   // 6-bit angle index (64 steps per revolution)
 
     theta_from_breakbeam #(
@@ -40,9 +30,6 @@ module main(
         .theta      (theta)
     );
 
-    // ------------------------------------------------------------
-    // 3) Use theta + next_px_num to address the texture ROM
-    // ------------------------------------------------------------
     wire [5:0] next_px_num;  // from neopixel_controller: which LED index
 
     // Scale theta (0..63) → column (0..255)
@@ -66,10 +53,6 @@ module main(
         .dataOut(pixel_color)
     );
 
-    // ------------------------------------------------------------
-    // 4) Neopixel controller (VHDL entity)
-    //    No changes needed here, just feed it pixel_color
-    // ------------------------------------------------------------
     neopixel_controller #(
         .px_count_width (6),
         .px_num         (LED_COUNT),
@@ -83,6 +66,45 @@ module main(
         .signal_out (ws2812_dout)
     );
 
-    // IMPORTANT: the old fixed timer-based theta increment has been removed.
+    wire rwe, mwe;
+	wire[4:0] rd, rs1, rs2;
+	wire[31:0] instAddr, instData, 
+		rData, regA, regB,
+		memAddr, memDataIn, memDataOut;
+
+    //--------------------------------  PROCESSOR  --------------------------------
+
+	localparam INSTR_FILE = "main.mem";
+	
+	processor CPU(.clock(clock), .reset(reset), 
+								
+		// ROM
+		.address_imem(instAddr), .q_imem(instData),
+									
+		// Regfile
+		.ctrl_writeEnable(rwe),     .ctrl_writeReg(rd),
+		.ctrl_readRegA(rs1),     .ctrl_readRegB(rs2), 
+		.data_writeReg(rData), .data_readRegA(regA), .data_readRegB(regB),
+									
+		// RAM
+		.wren(mwe), .address_dmem(memAddr), 
+		.data(memDataIn), .q_dmem(memDataOut)); 
+	
+	ROM #(.DATA_WIDTH(32), .ADDRESS_WIDTH(12), .DEPTH(4096), .MEMFILE({INSTR_FILE, ".mem"}))
+	InstMem(.clk(clock), 
+		.addr(instAddr[11:0]), 
+		.dataOut(instData));
+	
+	regfile RegisterFile(.clock(clock), 
+		.ctrl_writeEnable(rwe), .ctrl_reset(reset), 
+		.ctrl_writeReg(rd),
+		.ctrl_readRegA(rs1), .ctrl_readRegB(rs2), 
+		.data_writeReg(rData), .data_readRegA(regA), .data_readRegB(regB));
+						
+	RAM #(.DATA_WIDTH(32), .ADDRESS_WIDTH(12), .DEPTH(4096)) ProcMem(.clk(clock), 
+		.wEn(mwe), 
+		.addr(memAddr[11:0]), 
+		.dataIn(memDataIn), 
+		.dataOut(memDataOut));
 
 endmodule
