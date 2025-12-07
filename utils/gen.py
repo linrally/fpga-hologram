@@ -1,6 +1,3 @@
-"""
-python utils/gen.py image.png src/texture.mem
-"""
 from PIL import Image
 import numpy as np
 import sys
@@ -32,17 +29,21 @@ def main():
 
     with open(output_file, "w") as f:
         for row in range(TEX_HEIGHT):
+            # flip vertically: logical row 0 uses bottom of the source image
+            src_row = TEX_HEIGHT - 1 - row
+
             for col in range(TEX_WIDTH):
                 x0 = int(col * cell_w)
                 x1 = int((col + 1) * cell_w)
-                y0 = int(row * cell_h)
-                y1 = int((row + 1) * cell_h)
+                y0 = int(src_row * cell_h)
+                y1 = int((src_row + 1) * cell_h)
 
                 rgb = avg_color(img, x0, y0, x1, y1)
                 f.write(to_hex_grb(rgb) + "\n")
 
+                # preview in the logical (flipped) orientation
                 preview.putpixel((col, row), rgb)
-    
+
     preview.show()
 
 if __name__ == "__main__":
