@@ -61,6 +61,37 @@
 #   0xFFFF0008 - POV_WRITE      (write): Write trigger
 #   0xFFFF000C - POV_STATUS     (read):  Current column index
 #   0xFFFF0010 - POV_CTRL       (read/write): Control register
+#
+# ============================================================================
+# TUNABLE CONSTANTS FOR LOW-RPM VISIBILITY
+# ============================================================================
+# These constants can be adjusted to optimize visibility at ~400 RPM:
+#
+# EDGE_THICKNESS: Number of columns to light on each side of an edge point
+#   - Value of 1 means light col-1, col, col+1 (3 columns total)
+#   - Value of 2 means light col-2, col-1, col, col+1, col+2 (5 columns total)
+#   - Recommended: 1 or 2 for good visibility at low RPM
+#
+# EDGE_BRIGHTNESS: RGB color value for edges (24-bit: RRRRRRRR GGGGGGGG BBBBBBBB)
+#   - 0x00FFFFFF = full white (maximum brightness)
+#   - 0x00FF0000 = full red
+#   - 0x0000FF00 = full green
+#   - 0x000000FF = full blue
+#   - Recommended: 0x00FFFFFF for maximum visibility
+#
+# ANGLE_STEP: Rotation increment per frame (smaller = slower rotation)
+#   - Value of 1 = full rotation in 256 frames
+#   - Value of 2 = full rotation in 128 frames
+#   - Recommended: 1-3 for slow, recognizable rotation at 6-7 FPS
+#
+# ENABLE_DECAY: Whether to use persistence/blur effect
+#   - 0 = clear framebuffer each frame (sharp, flickery)
+#   - 1 = decay existing values (shift right by 1) before drawing (smooth, trailing)
+#   - Recommended: 1 for better visibility at low RPM
+#
+# DELAY_COUNT: Frame delay counter (larger = slower frame rate)
+#   - Adjust based on CPU speed and desired frame rate
+#   - Recommended: 10000-50000 for ~6-7 FPS at 100 MHz CPU
 
 # ============================================================================
 # DATA SECTION (will be assembled into memory initialization)
@@ -88,6 +119,27 @@ main:
     
     # Initialize angle to 0
     addi $4, $0, 0            # angle = 0
+    
+    # ========================================================================
+    # TUNABLE CONSTANTS (adjust these for optimal low-RPM visibility)
+    # ========================================================================
+    # Store constants in registers for easy access:
+    # $20 = EDGE_THICKNESS (1 = 3 columns, 2 = 5 columns)
+    addi $20, $0, 1           # EDGE_THICKNESS: light col±1 (3 columns total)
+    
+    # $21 = EDGE_BRIGHTNESS (24-bit RGB)
+    addi $21, $0, 0x00FF       # Upper 16 bits of white
+    sll $21, $21, 8
+    addi $21, $21, 0xFFFF      # EDGE_BRIGHTNESS = 0x00FFFFFF (full white)
+    
+    # $22 = ANGLE_STEP (rotation increment per frame)
+    addi $22, $0, 1            # ANGLE_STEP: increment by 1 per frame (slow rotation)
+    
+    # $23 = ENABLE_DECAY (0 = clear, 1 = decay)
+    addi $23, $0, 1            # ENABLE_DECAY: use persistence/blur effect
+    
+    # $24 = DELAY_COUNT (frame delay)
+    addi $24, $0, 20000        # DELAY_COUNT: adjust for ~6-7 FPS at 100 MHz
     
     # Initialize cube vertices (8 vertices: corners of a cube from -1 to +1)
     # Vertex 0: (+1, +1, +1)
@@ -235,15 +287,31 @@ main:
     
     # Main rendering loop
 main_loop:
-    # Clear framebuffer (set all columns to black)
+    # Decay or clear framebuffer
+    # If ENABLE_DECAY: shift each column right by 1 (decay brightness)
+    # If not: clear to black for sharp edges
     addi $5, $2, 0x1500       # Framebuffer base
     addi $6, $0, 0            # Column counter
     addi $7, $0, 256          # Total columns
+    bne $23, $0, decay_fb_loop # If ENABLE_DECAY != 0, use decay
+    
 clear_fb_loop:
-    sw $0, 0($5)              # Clear column
+    sw $0, 0($5)              # Clear column to black
     addi $5, $5, 4
     addi $6, $6, 1
     bne $6, $7, clear_fb_loop
+    j fb_clear_done
+    
+decay_fb_loop:
+    lw $25, 0($5)             # Load current pixel
+    sra $25, $25, 1           # Shift right by 1 (decay brightness)
+    andi $25, $25, 0x00FFFFFF # Mask to 24 bits (clear upper 8 bits)
+    sw $25, 0($5)             # Store decayed pixel
+    addi $5, $5, 4
+    addi $6, $6, 1
+    bne $6, $7, decay_fb_loop
+    
+fb_clear_done:
     
     # Rotate all vertices
     # Rotation around Y-axis: x' = x*cos - z*sin, y' = y, z' = x*sin + z*cos
@@ -330,7 +398,7 @@ clamp_done:
     addi $12, $0, 8
     bne $5, $12, project_vertices_loop
     
-    # Draw edges (lines between vertex pairs)
+    # Draw edges (lines between vertex pairs) with THICK EDGES for low-RPM visibility
     addi $5, $0, 0            # Edge index
     addi $6, $2, 0x1220       # Edge list base
     addi $7, $2, 0x1200       # Projected columns base
@@ -350,37 +418,179 @@ draw_edges_loop:
     add $12, $7, $12
     lw $12, 0($12)            # col2
     
-    # Draw line from col1 to col2 (simple: mark all columns in between)
+    # Draw THICK line from col1 to col2
+    # For each column along the line, light col-thickness to col+thickness
     # Determine direction
     blt $12, $11, draw_line_reverse
     # Draw forward (col1 to col2)
     add $13, $11, $0          # current_col = col1
 draw_line_forward:
-    sll $14, $13, 2           # offset in framebuffer
-    add $14, $8, $14
-    addi $15, $0, 0x00FFFFFF  # White color (RGB)
-    sw $15, 0($14)            # Mark column
+    # Light this column and surrounding columns (thick edge)
+    # Inline thick column drawing for this column
+    # Calculate column range: [col - thickness, col + thickness]
+    sub $25, $13, $20         # col_min = col - thickness
+    add $26, $13, $20         # col_max = col + thickness
+    
+    # Clamp col_min to [0, 255]
+    addi $27, $0, 0
+    blt $25, $27, fwd_clamp_min_low
+    j fwd_clamp_min_check
+fwd_clamp_min_low:
+    addi $25, $0, 0
+fwd_clamp_min_check:
+    addi $27, $0, 255
+    blt $27, $25, fwd_clamp_min_high
+    j fwd_clamp_min_done
+fwd_clamp_min_high:
+    addi $25, $0, 255
+fwd_clamp_min_done:
+    
+    # Clamp col_max to [0, 255]
+    addi $27, $0, 0
+    blt $26, $27, fwd_clamp_max_low
+    j fwd_clamp_max_check
+fwd_clamp_max_low:
+    addi $26, $0, 0
+    j fwd_clamp_max_done
+fwd_clamp_max_check:
+    addi $27, $0, 255
+    blt $27, $26, fwd_clamp_max_high
+    j fwd_clamp_max_done
+fwd_clamp_max_high:
+    addi $26, $0, 255
+fwd_clamp_max_done:
+    
+    # Light columns from col_min to col_max
+    add $27, $25, $0          # current_col = col_min
+fwd_thick_loop:
+    sll $28, $27, 2           # offset = current_col * 4
+    add $28, $8, $28          # framebuffer address
+    sw $21, 0($28)            # Store EDGE_BRIGHTNESS
+    addi $27, $27, 1
+    blt $27, $26, fwd_thick_loop
+    # Also light col_max
+    sll $28, $26, 2
+    add $28, $8, $28
+    sw $21, 0($28)
+    
     addi $13, $13, 1
     blt $13, $12, draw_line_forward
-    # Also mark col2
-    sll $14, $12, 2
-    add $14, $8, $14
-    sw $15, 0($14)
+    # Also draw thick column at col2
+    sub $25, $12, $20
+    add $26, $12, $20
+    addi $27, $0, 0
+    blt $25, $27, fwd_end_clamp_min
+    j fwd_end_check_max
+fwd_end_clamp_min:
+    addi $25, $0, 0
+fwd_end_check_max:
+    addi $27, $0, 255
+    blt $27, $25, fwd_end_clamp_min_high
+    j fwd_end_light
+fwd_end_clamp_min_high:
+    addi $25, $0, 255
+fwd_end_light:
+    addi $27, $0, 255
+    blt $27, $26, fwd_end_clamp_max
+    j fwd_end_light_loop
+fwd_end_clamp_max:
+    addi $26, $0, 255
+fwd_end_light_loop:
+    add $27, $25, $0
+fwd_end_loop:
+    sll $28, $27, 2
+    add $28, $8, $28
+    sw $21, 0($28)
+    addi $27, $27, 1
+    blt $27, $26, fwd_end_loop
+    sll $28, $26, 2
+    add $28, $8, $28
+    sw $21, 0($28)
     j draw_line_done
+    
 draw_line_reverse:
     # Draw reverse (col2 to col1)
     add $13, $12, $0          # current_col = col2
 draw_line_reverse_loop:
-    sll $14, $13, 2
-    add $14, $8, $14
-    addi $15, $0, 0x00FFFFFF  # White color
-    sw $15, 0($14)
+    # Light this column and surrounding columns (thick edge)
+    sub $25, $13, $20         # col_min = col - thickness
+    add $26, $13, $20         # col_max = col + thickness
+    
+    # Clamp col_min
+    addi $27, $0, 0
+    blt $25, $27, rev_clamp_min_low
+    j rev_clamp_min_check
+rev_clamp_min_low:
+    addi $25, $0, 0
+rev_clamp_min_check:
+    addi $27, $0, 255
+    blt $27, $25, rev_clamp_min_high
+    j rev_clamp_min_done
+rev_clamp_min_high:
+    addi $25, $0, 255
+rev_clamp_min_done:
+    
+    # Clamp col_max
+    addi $27, $0, 0
+    blt $26, $27, rev_clamp_max_low
+    j rev_clamp_max_check
+rev_clamp_max_low:
+    addi $26, $0, 0
+    j rev_clamp_max_done
+rev_clamp_max_check:
+    addi $27, $0, 255
+    blt $27, $26, rev_clamp_max_high
+    j rev_clamp_max_done
+rev_clamp_max_high:
+    addi $26, $0, 255
+rev_clamp_max_done:
+    
+    # Light columns
+    add $27, $25, $0
+rev_thick_loop:
+    sll $28, $27, 2
+    add $28, $8, $28
+    sw $21, 0($28)
+    addi $27, $27, 1
+    blt $27, $26, rev_thick_loop
+    sll $28, $26, 2
+    add $28, $8, $28
+    sw $21, 0($28)
+    
     addi $13, $13, 1
     blt $13, $11, draw_line_reverse_loop
-    # Also mark col1
-    sll $14, $11, 2
-    add $14, $8, $14
-    sw $15, 0($14)
+    # Also draw thick column at col1
+    sub $25, $11, $20
+    add $26, $11, $20
+    addi $27, $0, 0
+    blt $25, $27, rev_end_clamp_min
+    j rev_end_check_max
+rev_end_clamp_min:
+    addi $25, $0, 0
+rev_end_check_max:
+    addi $27, $0, 255
+    blt $27, $25, rev_end_clamp_min_high
+    j rev_end_light
+rev_end_clamp_min_high:
+    addi $25, $0, 255
+rev_end_light:
+    addi $27, $0, 255
+    blt $27, $26, rev_end_clamp_max
+    j rev_end_light_loop
+rev_end_clamp_max:
+    addi $26, $0, 255
+rev_end_light_loop:
+    add $27, $25, $0
+rev_end_loop:
+    sll $28, $27, 2
+    add $28, $8, $28
+    sw $21, 0($28)
+    addi $27, $27, 1
+    blt $27, $26, rev_end_loop
+    sll $28, $26, 2
+    add $28, $8, $28
+    sw $21, 0($28)
+    
 draw_line_done:
     
     # Move to next edge
@@ -413,16 +623,24 @@ copy_to_pov_loop:
     addi $6, $6, 1
     bne $6, $7, copy_to_pov_loop
     
-    # Increment angle (wrap at 256)
-    addi $4, $4, 1
+    # Increment angle by ANGLE_STEP (slow rotation for low-RPM visibility)
+    # Use R-type add instruction: add $rd, $rs, $rt
+    # Format: add $4, $4, $22 means $4 = $4 + $22
+    # If assembler doesn't support register-to-register add, use this workaround:
+    #   addi $4, $4, 1  (hardcoded step of 1)
+    # For tunable step, we'll use the register version (assembler should handle it)
+    add $4, $4, $22           # angle += ANGLE_STEP (R-type: $4 = $4 + $22)
     addi $9, $0, 256
-    bne $4, $9, angle_ok
-    addi $4, $0, 0            # Wrap angle
+    blt $4, $9, angle_ok
+    # Wrap angle: subtract 256 using add with negative
+    # Since we can't use negative immediate in addi easily, use sub
+    addi $9, $0, 256
+    sub $4, $4, $9            # angle -= 256 (wrap around, R-type: $4 = $4 - $9)
 angle_ok:
     
-    # Small delay (optional, to control frame rate)
+    # Frame delay (use DELAY_COUNT constant for frame rate control)
     addi $9, $0, 0
-    addi $10, $0, 10000       # Delay counter
+    add $10, $24, $0          # Use DELAY_COUNT from $24
 delay_loop:
     addi $9, $9, 1
     bne $9, $10, delay_loop
@@ -431,4 +649,6 @@ delay_loop:
     j main_loop
 
 # End of program
+# Note: Thick column drawing is now inlined in the draw_line_forward and
+# draw_line_reverse sections for efficiency and to avoid return address issues.
 

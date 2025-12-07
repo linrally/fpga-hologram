@@ -161,6 +161,33 @@ The CPU supports the following instructions (from `processor.v`):
 - `setx` (set exception register)
 - `bex` (branch if exception)
 
+## Low-RPM Visibility Optimizations (~400 RPM)
+
+The cube renderer has been optimized for low motor speeds (~400 RPM, ~6-7 revolutions per second):
+
+1. **Thick Edges**: 
+   - Each edge lights multiple columns (configurable via `EDGE_THICKNESS`)
+   - Default: lights 3 columns (col-1, col, col+1) for each edge point
+   - Ensures edges are visible even with flicker at low refresh rates
+
+2. **Slow Rotation**:
+   - Configurable `ANGLE_STEP` (default: 1) for slow, recognizable rotation
+   - Full rotation takes 256 frames, making the cube shape clear frame-to-frame
+
+3. **Persistence/Blur Effect**:
+   - Optional decay mode (`ENABLE_DECAY`) shifts existing framebuffer right by 1 before drawing
+   - Creates trailing effect that helps human eye see continuous edges
+   - Can be disabled for sharp, flickery edges
+
+4. **Full Brightness**:
+   - Edges use maximum brightness (0x00FFFFFF white) by default
+   - Background is completely black (no noise)
+   - High contrast ensures visibility at low RPM
+
+5. **Tunable Constants**:
+   - All visibility parameters are easily adjustable at the top of the assembly program
+   - See comments in `cube_pov.s` for `EDGE_THICKNESS`, `EDGE_BRIGHTNESS`, `ANGLE_STEP`, `ENABLE_DECAY`, `DELAY_COUNT`
+
 ## Limitations and Future Improvements
 
 1. **Rotation Math**: The current assembly program uses simplified rotation. A full implementation would:
