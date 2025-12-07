@@ -1,0 +1,11 @@
+alu.v
+alu_tb.v
+and_32.v
+cla_32.v
+cla_8.v
+mux.v
+not_32.v
+or_32.v
+or_reduce_32.v
+sll_barrel_32.v
+sra_barrel_32.v

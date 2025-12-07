@@ -1,0 +1,3 @@
+A, B, ALU OP, Shift Amount, Result, isNE, isLT, OVF
+          8,          0, 4, 2,         32,1,0,0
+         16,          0, 4, 3,        128,1,0,0

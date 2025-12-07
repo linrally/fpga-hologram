@@ -11,11 +11,29 @@ RTL := $(filter-out $(EXCLUDE_RTL), $(RTL))
 .PHONY: sim
 
 sim:
-	@for tb in $(TESTS); do \
+	@set -o pipefail; \
+	mkdir -p sim/build; \
+	for tb in $(TESTS); do \
 		base=$$(basename $$tb .v); \
-		echo "Running $$tb..."; \
-		iverilog -o sim/$$base $(RTL) $$tb || exit 1; \
-		vvp sim/$$base || exit 1; \
+		dir=$$(dirname $$tb); \
+		args="$$dir/$$base.args"; \
+		echo "================================================"; \
+		echo "$$tb..."; \
+		echo "================================================"; \
+		iverilog -o sim/build/$$base $(RTL) $$tb || exit 1; \
+		bin=$$(pwd)/sim/build/$$base; \
+		if [ -f "$$args" ]; then \
+			echo "Found args $$args"; \
+			while read arg; do \
+				[ -z "$$arg" ] && continue; \
+				echo "Running $$base test=$$arg..."; \
+				( cd $$dir && set -o pipefail; vvp $$bin +test=$$arg | grep -v '^VCD' ) \
+				|| { echo "\033[1;31mFAILED on $$arg in $$base\033[0m"; exit 1; }; \
+			done < $$args; \
+		else \
+			echo "Running $$base..."; \
+			( cd $$dir && set -o pipefail; vvp $$bin | grep -v '^VCD' ) \
+			|| { echo "\033[1;31mFAILED $$base\033[0m"; exit 1; }; \
+		fi; \
 	done
-	@echo "All tests passed!"
-
+	@echo "\033[1;32mAll tests passed!\033[0m"
