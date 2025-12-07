@@ -53,7 +53,7 @@ module Wrapper (clock, reset);
 		.data(memDataIn), .q_dmem(memDataOut)); 
 	
 	// Instruction Memory (ROM)
-	ROM #(.MEMFILE({INSTR_FILE, ".mem"}))
+	ROM #(.DATA_WIDTH(32), .ADDRESS_WIDTH(12), .DEPTH(4096), .MEMFILE({INSTR_FILE, ".mem"}))
 	InstMem(.clk(clock), 
 		.addr(instAddr[11:0]), 
 		.dataOut(instData));
@@ -66,7 +66,7 @@ module Wrapper (clock, reset);
 		.data_writeReg(rData), .data_readRegA(regA), .data_readRegB(regB));
 						
 	// Processor Memory (RAM)
-	RAM ProcMem(.clk(clock), 
+	RAM #(.DATA_WIDTH(32), .ADDRESS_WIDTH(12), .DEPTH(4096)) ProcMem(.clk(clock), 
 		.wEn(mwe), 
 		.addr(memAddr[11:0]), 
 		.dataIn(memDataIn), 

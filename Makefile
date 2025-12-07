@@ -10,6 +10,7 @@ RTL := $(filter-out $(EXCLUDE_RTL), $(RTL))
 
 .PHONY: sim
 
+# args need to have a trailing newline (TODO: fix)
 sim:
 	@set -o pipefail; \
 	mkdir -p sim/build; \
@@ -24,7 +25,7 @@ sim:
 		bin=$$(pwd)/sim/build/$$base; \
 		if [ -f "$$args" ]; then \
 			echo "Found args $$args"; \
-			while read arg; do \
+			while read arg; do \ 
 				[ -z "$$arg" ] && continue; \
 				echo "Running $$base test=$$arg..."; \
 				( cd $$dir && set -o pipefail; vvp $$bin +test=$$arg | grep -v '^VCD' ) \
