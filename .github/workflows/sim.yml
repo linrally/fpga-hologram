@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v
+        uses: actions/checkout@v4
 
       - name: Install iverilog
         run: |
@@ -20,8 +20,6 @@ jobs:
           sudo apt-get install -y iverilog
 
       - name: Run Verilog simulations
-        shell: bash # pipefail
+        shell: bash
         run: |
           make sim
-
-
