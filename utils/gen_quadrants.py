@@ -1,4 +1,5 @@
-# gen_quadrants.py
+from PIL import Image
+
 TEX_WIDTH = 256
 TEX_HEIGHT = 52
 
@@ -13,8 +14,14 @@ def to_hex_grb(c):
     g, r, b = c
     return f"{g:02X}{r:02X}{b:02X}"
 
-with open("texture.mem", "w") as f:
+preview = Image.new("RGB", (TEX_WIDTH, TEX_HEIGHT))
+
+with open("src/texture.mem", "w") as f:
     for row in range(TEX_HEIGHT):
         for col in range(TEX_WIDTH):
             quad = col // (TEX_WIDTH // 4)
             f.write(to_hex_grb(colors[quad]) + "\n")
+
+            preview.putpixel((col, row), colors[quad])
+
+preview.show()
