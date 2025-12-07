@@ -305,7 +305,9 @@ clear_fb_loop:
 decay_fb_loop:
     lw $25, 0($5)             # Load current pixel
     sra $25, $25, 1           # Shift right by 1 (decay brightness)
-    andi $25, $25, 0x00FFFFFF # Mask to 24 bits (clear upper 8 bits)
+    # Mask to 24 bits (clear upper 8 bits) - andi not supported, use workaround
+    addi $29, $0, 0x00FFFFFF  # Load mask into $29
+    and $25, $25, $29         # and $25, $25, $29 (mask to 24 bits)
     sw $25, 0($5)             # Store decayed pixel
     addi $5, $5, 4
     addi $6, $6, 1
