@@ -1,5 +1,7 @@
 module main(
     input  wire clk,         
+    input  wire reset,
+    input  wire BTNU
     input  wire break_din,   
     output wire ws2812_dout, 
     output wire [0:0] LED    
@@ -66,16 +68,17 @@ module main(
         .signal_out (ws2812_dout)
     );
 
+    //--------------------------------  PROCESSOR  --------------------------------
     wire rwe, mwe;
 	wire[4:0] rd, rs1, rs2;
 	wire[31:0] instAddr, instData, 
 		rData, regA, regB,
 		memAddr, memDataIn, memDataOut;
 
-    //--------------------------------  PROCESSOR  --------------------------------
 
 	localparam INSTR_FILE = "main.mem";
 	
+	// Main Processing Unit
 	processor CPU(.clock(clock), .reset(reset), 
 								
 		// ROM
@@ -90,21 +93,27 @@ module main(
 		.wren(mwe), .address_dmem(memAddr), 
 		.data(memDataIn), .q_dmem(memDataOut)); 
 	
+	// Instruction Memory (ROM)
 	ROM #(.DATA_WIDTH(32), .ADDRESS_WIDTH(12), .DEPTH(4096), .MEMFILE({INSTR_FILE, ".mem"}))
 	InstMem(.clk(clock), 
 		.addr(instAddr[11:0]), 
 		.dataOut(instData));
 	
+	// Register File
 	regfile RegisterFile(.clock(clock), 
 		.ctrl_writeEnable(rwe), .ctrl_reset(reset), 
 		.ctrl_writeReg(rd),
 		.ctrl_readRegA(rs1), .ctrl_readRegB(rs2), 
 		.data_writeReg(rData), .data_readRegA(regA), .data_readRegB(regB));
 						
+	wire [31:0] memDataOutRaw;
+	// Processor Memory (RAM)
 	RAM #(.DATA_WIDTH(32), .ADDRESS_WIDTH(12), .DEPTH(4096)) ProcMem(.clk(clock), 
 		.wEn(mwe), 
 		.addr(memAddr[11:0]), 
 		.dataIn(memDataIn), 
-		.dataOut(memDataOut));
+		.dataOut(memDataOutRaw));
+	
+	MMIO MMIO(.addr(memAddr[11:0]), .data(memDataOutRaw), .data_out(memDataOut), .BTNU(BTNU));
 
 endmodule
