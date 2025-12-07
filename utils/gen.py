@@ -33,8 +33,9 @@ def main():
             src_row = TEX_HEIGHT - 1 - row
 
             for col in range(TEX_WIDTH):
-                x0 = int(col * cell_w)
-                x1 = int((col + 1) * cell_w)
+                src_col = TEX_WIDTH - 1 - col
+                x0 = int(src_col * cell_w)
+                x1 = int((src_col + 1) * cell_w)
                 y0 = int(src_row * cell_h)
                 y1 = int((src_row + 1) * cell_h)
 
