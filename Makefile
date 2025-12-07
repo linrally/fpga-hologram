@@ -2,7 +2,7 @@ TESTS := $(shell find sim -name "*_tb.v")
 RTL   := $(shell find src -name "*.v")
 
 # main has VHDL modules
-EXCLUDE_TESTS := sim/main_tb.v
+EXCLUDE_TESTS := sim/main_tb.v sim/proc/Wrapper_tb.v
 EXCLUDE_RTL = src/main.v
 
 TESTS := $(filter-out $(EXCLUDE_TESTS), $(TESTS))
@@ -47,3 +47,30 @@ sim:
 		fi; \
 	done
 	@echo "\033[1;32mAll tests passed!\033[0m"
+
+sim-proc:
+	@mkdir -p sim/build; \
+	args="sim/proc/Wrapper_tb.args"; \
+	tb="sim/proc/Wrapper_tb.v"; \
+	echo "Running processor tests..."; \
+	while read arg; do \
+		[ -z "$$arg" ] && continue; \
+		prog="sim/proc/$$arg"; \
+		echo "Assembling $$prog.s..."; \
+		python3 assembler/assemble.py $$prog.s -o $$prog.mem || exit 1; \
+		base="Wrapper_tb_$$arg"; \
+		echo "================================================"; \
+		echo "Compiling $$tb with INSTR_FILE=$$prog.mem"; \
+		echo "================================================"; \
+		iverilog -o sim/build/$$base -s Wrapper_tb -PWrapper_tb.INSTR_FILE=\"$$arg\" $(RTL) $$tb || exit 1; \
+		bin=$$(pwd)/sim/build/$$base; \
+		echo "Running $$base..."; \
+		out=$$( cd sim/proc && vvp $$bin 2>&1 ); \
+		status=$$?; \
+		echo "$$out" | grep -v '^VCD'; \
+		if [ $$status -ne 0 ]; then \
+			echo "\033[1;31mFAILED on $$arg in $$base\033[0m"; \
+			exit 1; \
+		fi; \
+	done < $$args; \
+	echo "\033[1;32mProcessor tests passed!\033[0m"

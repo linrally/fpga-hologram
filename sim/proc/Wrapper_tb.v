@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps
 
-module Wrapper (clock, reset);
-	input clock, reset;
+module Wrapper_tb #(parameter INSTR_FILE = "");
+    localparam NUM_CYCLES = 255;
+    reg clock = 0, reset = 0;
 
 	wire rwe, mwe;
 	wire[4:0] rd, rs1, rs2;
@@ -9,11 +10,6 @@ module Wrapper (clock, reset);
 		rData, regA, regB,
 		memAddr, memDataIn, memDataOut;
 
-
-	// ADD YOUR MEMORY FILE HERE
-	localparam INSTR_FILE = "";
-	
-	// Main Processing Unit
 	processor CPU(.clock(clock), .reset(reset), 
 								
 		// ROM
@@ -28,13 +24,11 @@ module Wrapper (clock, reset);
 		.wren(mwe), .address_dmem(memAddr), 
 		.data(memDataIn), .q_dmem(memDataOut)); 
 	
-	// Instruction Memory (ROM)
 	ROM #(.DATA_WIDTH(32), .ADDRESS_WIDTH(12), .DEPTH(4096), .MEMFILE({INSTR_FILE, ".mem"}))
 	InstMem(.clk(clock), 
 		.addr(instAddr[11:0]), 
 		.dataOut(instData));
 	
-	// Register File
 	regfile RegisterFile(.clock(clock), 
 		.ctrl_writeEnable(rwe), .ctrl_reset(reset), 
 		.ctrl_writeReg(rd),
@@ -47,5 +41,28 @@ module Wrapper (clock, reset);
 		.addr(memAddr[11:0]), 
 		.dataIn(memDataIn), 
 		.dataOut(memDataOut));
+    
+    always #5 clock = ~clock;
 
+    integer cycles;
+	reg[9:0] num_cycles = NUM_CYCLES;
+
+    initial begin
+        reset = 1;
+        #1;
+        reset = 0;
+
+		for (cycles = 0; cycles < num_cycles; cycles = cycles + 1) begin
+			
+			// Every rising edge, write to the actual file
+			@(posedge clock);
+			if (rwe && rd != 0) begin
+				$display("Cycle %3d: Wrote %0d into register %0d", cycles, $signed(rData), rd);
+			end
+		end
+
+        #100;
+        $finish;
+    end
+    
 endmodule

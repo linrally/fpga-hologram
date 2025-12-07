@@ -11,9 +11,9 @@ def avg_color(img, x0, y0, x1, y1):
         return (0, 0, 0)
     return tuple(region.reshape(-1, 3).mean(axis=0).astype(int))
 
-def to_hex_grb(rgb):
+def to_bin_grb(rgb):
     r, g, b = rgb
-    return f"{g:02X}{r:02X}{b:02X}"
+    return f"{g:08b}{r:08b}{b:08b}"
 
 def main():
     input_file = sys.argv[1]
@@ -40,7 +40,7 @@ def main():
                 y1 = int((src_row + 1) * cell_h)
 
                 rgb = avg_color(img, x0, y0, x1, y1)
-                f.write(to_hex_grb(rgb) + "\n")
+                f.write(to_bin_grb(rgb) + "\n")
 
                 # preview in the logical (flipped) orientation
                 preview.putpixel((col, row), rgb)
