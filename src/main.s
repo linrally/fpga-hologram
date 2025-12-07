@@ -18,7 +18,7 @@ loop:
 changed:
     # Only act on rising edge: last=0 and now=1
     bne  $t2, $zero, rising
-    j    continue_loop
+    j    continue
 
 rising:
     # Button press detected: increment texture index

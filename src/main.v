@@ -86,7 +86,7 @@ module main(
 		memAddr, memDataIn, memDataOut;
 
 
-	localparam INSTR_FILE = "main.mem";
+	localparam INSTR_FILE = "main";
 	
 	// Main Processing Unit
 	processor CPU(.clock(clock), .reset(reset), 
@@ -124,6 +124,6 @@ module main(
 		.dataIn(memDataIn), 
 		.dataOut(memDataOutRaw));
 	
-	MMIO mmio(.addr(memAddr[11:0]), .mwe(mwe), .data(memDataOutRaw), .data_out(memDataOut), .BTNU(BTNU), .texture_idx(texture_idx));
+	MMIO mmio(.clk(clk), .addr(memAddr[11:0]), .mwe(mwe), .data(memDataOutRaw), .data_out(memDataOut), .BTNU(BTNU), .texture_idx(texture_idx));
 
 endmodule
