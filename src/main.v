@@ -1,9 +1,21 @@
 // main.v
 // Top-level for POV display with WS2812 and break-beam angle locking
+//
+// Architecture:
+//   - Mode 0 (mode_sel = 0): Globe mode - displays static texture from texture.mem ROM
+//   - Mode 1 (mode_sel = 1): CPU cube mode - CPU renders 3D rotating wireframe cube
+//
+// CPU Integration:
+//   - CPU instruction memory: separate ROM for CPU program (cube_prog.mem)
+//   - CPU data memory: RAM for general data
+//   - Memory-mapped POV peripheral: 0xFFFF0000-0xFFFF0010 for framebuffer control
+//   - Address decoding routes CPU data accesses to RAM or POV peripheral
 
 module main(
     input  wire clk,          // 100 MHz board clock
     input  wire break_din,    // IR break-beam sensor input
+    input  wire mode_sel,     // Mode selection: 0=globe, 1=CPU cube
+    input  wire cpu_reset,    // CPU reset signal
     output wire ws2812_dout,  // data out to WS2812 strip
     output wire [0:0] LED     // debug LED
 );
@@ -67,8 +79,114 @@ module main(
     );
 
     // ------------------------------------------------------------
-    // 4) Neopixel controller (VHDL entity)
-    //    No changes needed here, just feed it pixel_color
+    // 4) CPU subsystem (Mode 1: CPU cube rendering)
+    // ------------------------------------------------------------
+    
+    // CPU signals
+    wire cpu_rwe, cpu_mwe;
+    wire [4:0] cpu_rd, cpu_rs1, cpu_rs2;
+    wire [31:0] cpu_inst_addr, cpu_inst_data;
+    wire [31:0] cpu_reg_data, cpu_regA, cpu_regB;
+    wire [31:0] cpu_mem_addr, cpu_mem_data_in, cpu_mem_data_out;
+    
+    // CPU instruction memory (separate from texture ROM)
+    localparam INSTR_FILE = "cube_prog";  // CPU program memory file
+    
+    // CPU processor
+    processor CPU(
+        .clock(clk),
+        .reset(cpu_reset),
+        .address_imem(cpu_inst_addr),
+        .q_imem(cpu_inst_data),
+        .ctrl_writeEnable(cpu_rwe),
+        .ctrl_writeReg(cpu_rd),
+        .ctrl_readRegA(cpu_rs1),
+        .ctrl_readRegB(cpu_rs2),
+        .data_writeReg(cpu_reg_data),
+        .data_readRegA(cpu_regA),
+        .data_readRegB(cpu_regB),
+        .wren(cpu_mwe),
+        .address_dmem(cpu_mem_addr),
+        .data(cpu_mem_data_in),
+        .q_dmem(cpu_mem_data_out)
+    );
+    
+    // CPU instruction ROM
+    ROM #(
+        .DATA_WIDTH(32),
+        .ADDRESS_WIDTH(12),
+        .DEPTH(4096),
+        .MEMFILE({INSTR_FILE, ".mem"})
+    ) cpu_inst_rom(
+        .clk(clk),
+        .addr(cpu_inst_addr[11:0]),
+        .dataOut(cpu_inst_data)
+    );
+    
+    // CPU register file
+    regfile cpu_regfile(
+        .clock(clk),
+        .ctrl_writeEnable(cpu_rwe),
+        .ctrl_reset(cpu_reset),
+        .ctrl_writeReg(cpu_rd),
+        .ctrl_readRegA(cpu_rs1),
+        .ctrl_readRegB(cpu_rs2),
+        .data_writeReg(cpu_reg_data),
+        .data_readRegA(cpu_regA),
+        .data_readRegB(cpu_regB)
+    );
+    
+    // CPU data memory (RAM) - for normal data accesses
+    wire cpu_ram_wren;
+    wire [31:0] cpu_ram_data_out;
+    
+    // Address decoding: POV peripheral is at 0xFFFF0000-0xFFFF0010
+    wire is_pov_access = (cpu_mem_addr >= 32'hFFFF0000) && (cpu_mem_addr < 32'hFFFF0020);
+    wire is_ram_access = !is_pov_access;
+    
+    assign cpu_ram_wren = cpu_mwe && is_ram_access;
+    
+    RAM #(
+        .DATA_WIDTH(32),
+        .ADDRESS_WIDTH(12),
+        .DEPTH(4096)
+    ) cpu_data_ram(
+        .clk(clk),
+        .wEn(cpu_ram_wren),
+        .addr(cpu_mem_addr[11:0]),
+        .dataIn(cpu_mem_data_in),
+        .dataOut(cpu_ram_data_out)
+    );
+    
+    // POV peripheral (memory-mapped IO)
+    wire [31:0] pov_cpu_data_out;
+    wire [23:0] pov_pixel_color;
+    wire cpu_pov_rden = !cpu_mwe && is_pov_access;  // Read enable for lw instruction
+    
+    pov_peripheral pov_periph(
+        .clk(clk),
+        .reset(cpu_reset),
+        .cpu_addr(cpu_mem_addr),
+        .cpu_data_in(cpu_mem_data_in),
+        .cpu_wren(cpu_mwe && is_pov_access),
+        .cpu_rden(cpu_pov_rden),
+        .cpu_data_out(pov_cpu_data_out),
+        .theta(theta),
+        .pixel_color(pov_pixel_color)
+    );
+    
+    // Multiplex CPU data memory output (RAM or POV peripheral)
+    assign cpu_mem_data_out = is_pov_access ? pov_cpu_data_out : cpu_ram_data_out;
+    
+    // ------------------------------------------------------------
+    // 5) Mode selection: choose between globe and CPU cube
+    // ------------------------------------------------------------
+    wire [23:0] selected_pixel_color;
+    assign selected_pixel_color = mode_sel ? pov_pixel_color : pixel_color;
+    
+    // ------------------------------------------------------------
+    // 6) Neopixel controller (VHDL entity)
+    //    Feed it the selected pixel color (globe or CPU cube)
     // ------------------------------------------------------------
     neopixel_controller #(
         .px_count_width (6),
@@ -78,7 +196,7 @@ module main(
         .clk        (clk),
         .rst        (1'b0),
         .start      (1'b1),
-        .pixel      (pixel_color),
+        .pixel      (selected_pixel_color),
         .next_px_num(next_px_num),
         .signal_out (ws2812_dout)
     );
