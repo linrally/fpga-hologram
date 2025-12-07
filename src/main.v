@@ -53,7 +53,7 @@ module main(
     // ROM interface
     wire [23:0] pixel_color;
     wire [$clog2(TEX_WIDTH*LED_COUNT)-1:0] rom_addr;
-    assign rom_addr = next_px_num * TEX_WIDTH + col;
+    assign rom_addr = (LED_COUNT - 1 - next_px_num) * TEX_WIDTH + col;
 
     ROM #(
         .DATA_WIDTH   (24),
