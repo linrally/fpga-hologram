@@ -25,7 +25,7 @@ sim:
 		bin=$$(pwd)/sim/build/$$base; \
 		if [ -f "$$args" ]; then \
 			echo "Found args $$args"; \
-			while read arg; do \ 
+			while read arg; do \
 				[ -z "$$arg" ] && continue; \
 				echo "Running $$base test=$$arg..."; \
 				( cd $$dir && set -o pipefail; vvp $$bin +test=$$arg | grep -v '^VCD' ) \
