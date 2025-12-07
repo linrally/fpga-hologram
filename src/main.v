@@ -32,7 +32,7 @@ module main(
 
     theta_from_breakbeam #(
         .THETA_BITS (6),
-        .PERIOD_BITS(24)   // increase to 26/28 if you want slower RPM support
+        .PERIOD_BITS(28)   // increase to 26/28 if you want slower RPM support
     ) angle_gen (
         .clk        (clk),
         .reset      (1'b0),        // tie to a real reset if you have one

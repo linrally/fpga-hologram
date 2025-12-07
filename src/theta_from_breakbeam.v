@@ -3,7 +3,7 @@
 
 module theta_from_breakbeam #(
     parameter integer THETA_BITS  = 6,   // number of bits for theta (64 steps)
-    parameter integer PERIOD_BITS = 24   // bits for period counter (clocks/rev)
+    parameter integer PERIOD_BITS = 28   // bits for period counter (clocks/rev)
 )(
     input  wire                    clk,
     input  wire                    reset,
@@ -34,7 +34,8 @@ module theta_from_breakbeam #(
             prev_beam <= break_clean;
 
             // increment period counter always (time since last edge)
-            period_counter <= period_counter + 1'b1;
+            if (period_counter != {PERIOD_BITS{1'b1}})
+                period_counter <= period_counter + 1'b1;
 
             // Detect rising edge of beam → completed one revolution
             if (break_clean && !prev_beam) begin
