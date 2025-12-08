@@ -118,20 +118,22 @@ util_block:
     addi $t6, $zero, 0         # sum
 ub_debounce_loop:
     lw   $t2, 1000($zero)      # read button
-    andi $t2, $t2, 1
     add  $t6, $t6, $t2
     addi $t5, $t5, -1
     bne  $t5, $zero, ub_debounce_loop
-    # avg in $t6 (0..16); flag in s0 (1 if > 8)
-    addi $s0, $zero, 8
-    slt  $s0, $s0, $t6         # s0=1 if avg>8 else 0
+    # avg in $t6 (0..16); set s0 = 1 if avg > 8
+    addi $s0, $zero, 0
+    addi $t5, $zero, 8
+    blt  $t5, $t6, ub_set_flag
+    j    ub_flag_done
+ub_set_flag:
+    addi $s0, $zero, 1
+ub_flag_done:
 
-    # LFSR 16-bit in t3
-    sll  $t2, $t3, 1
-    srli $t4, $t3, 15
-    xor  $t2, $t2, $t4
-    xori $t2, $t2, 0xB400      # tap mask example
-    andi $t3, $t2, 0xFFFF      # keep 16-bit
+    # Pseudo-LFSR update (simple additive update)
+    addi $t4, $zero, 13
+    add  $t3, $t3, $t6
+    add  $t3, $t3, $t4
 
     # Checksum over 8 words at RAM[1100..1107], store at 1108
     addi $t5, $zero, 8
