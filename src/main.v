@@ -9,7 +9,7 @@ module main(
     //--------------------------------  MAPPER UNIT  --------------------------------
     localparam LED_COUNT  = 52;
     localparam TEX_WIDTH  = 64;
-    localparam NUM_FRAMES = 76;  // number of animation frames
+    localparam NUM_FRAMES = 1;  // number of animation frames
     localparam FRAME_SIZE = TEX_WIDTH * LED_COUNT;  // pixels per frame
 
     // 24 fps animation timer
@@ -62,10 +62,10 @@ module main(
 
     // ROM interface
     wire [23:0] pixel_color;
-    wire [$clog2(TEX_WIDTH*LED_COUNT)-1:0] rom_addr;
+    wire [$clog2(FRAME_SIZE*NUM_FRAMES)-1:0] rom_addr;
 
     // Calculate ROM address: frame_offset + led_offset + column
-    wire [$clog2(TEX_WIDTH*LED_COUNT)-1:0] frame_offset;
+    wire [$clog2(FRAME_SIZE*NUM_FRAMES)-1:0] frame_offset;
     assign frame_offset = frame_idx * FRAME_SIZE;
     assign rom_addr = frame_offset + next_px_num * TEX_WIDTH + col;
 
