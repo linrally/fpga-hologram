@@ -1,3 +1,2 @@
-main:
 addi $r1, $r1, 1
-j main
+addi $r3, $r1, 2

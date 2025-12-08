@@ -2,9 +2,9 @@ TESTS := $(shell find sim -name "*_tb.v")
 RTL   := $(shell find src -name "*.v")
 
 # main has VHDL modules
-EXCLUDE_TESTS := sim/main_tb.v sim/proc/Wrapper_tb.v
+# wrapper is a processor test
+EXCLUDE_TESTS := sim/main_tb.v sim/proc/Wrapper_tb.v 
 EXCLUDE_RTL = src/main.v
-
 TESTS := $(filter-out $(EXCLUDE_TESTS), $(TESTS))
 RTL := $(filter-out $(EXCLUDE_RTL), $(RTL))
 

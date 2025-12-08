@@ -53,7 +53,6 @@ module Wrapper_tb #(parameter INSTR_FILE = "");
         reset = 0;
 
 		for (cycles = 0; cycles < num_cycles; cycles = cycles + 1) begin
-			
 			// Every rising edge, write to the actual file
 			@(posedge clock);
 			if (rwe && rd != 0) begin
