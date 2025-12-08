@@ -11,15 +11,19 @@ import numpy as np
 def gif_to_texture(gif_path, output_path, led_count=52, tex_width=64):
     gif = Image.open(gif_path)
 
-    num_frames = 0
+    total_frames = 0
     try:
         while True:
-            gif.seek(num_frames)
-            num_frames += 1
+            gif.seek(total_frames)
+            total_frames += 1
     except EOFError:
         pass
 
-    print(f"GIF has {num_frames} frames")
+    # Extract first 75 frames (5 seconds at 15 fps)
+    num_frames = min(total_frames, 75)
+
+    print(f"GIF has {total_frames} frames")
+    print(f"Extracting first {num_frames} frames")
     print(f"Target size: {tex_width}x{led_count} per frame")
 
     # Create preview image: stack all frames vertically

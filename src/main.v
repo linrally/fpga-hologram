@@ -9,7 +9,7 @@ module main(
     //--------------------------------  MAPPER UNIT  --------------------------------
     localparam LED_COUNT  = 52;
     localparam TEX_WIDTH  = 64;
-    localparam NUM_FRAMES = 237;  // number of animation frames
+    localparam NUM_FRAMES = 75;  // number of animation frames
     localparam FRAME_SIZE = TEX_WIDTH * LED_COUNT;  // pixels per frame
 
     // 15 fps animation timer
