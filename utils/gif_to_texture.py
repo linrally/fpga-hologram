@@ -19,8 +19,8 @@ def gif_to_texture(gif_path, output_path, led_count=52, tex_width=64):
     except EOFError:
         pass
 
-    # Extract first 75 frames (5 seconds at 15 fps)
-    num_frames = min(total_frames, 75)
+    # Extract first 30 frames
+    num_frames = min(total_frames, 30)
 
     print(f"GIF has {total_frames} frames")
     print(f"Extracting first {num_frames} frames")
