@@ -1,14 +1,6 @@
 #!/usr/bin/env python3
 """
-Convert an animated GIF to texture.mem format for FPGA hologram display.
-
-The output format is a binary file where each pixel is 24 bits (GRB).
-Frames are concatenated: [frame0][frame1][frame2]...
-Each frame is organized as: [LED0_cols][LED1_cols]...[LED51_cols]
-Each LED has 256 columns (one per angle around the circle).
-
-Usage:
-    python gif_to_texture.py input.gif output.mem --frames 24
+python gif_to_texture.py input.gif output.mem --frames 24
 """
 
 import argparse
@@ -17,20 +9,8 @@ import numpy as np
 
 
 def gif_to_texture(gif_path, output_path, num_frames, led_count=52, tex_width=256):
-    """
-    Convert animated GIF to texture memory file.
-
-    Args:
-        gif_path: Path to input GIF file
-        output_path: Path to output .mem file
-        num_frames: Number of frames to extract from GIF
-        led_count: Number of LEDs (height of texture)
-        tex_width: Number of columns (width of texture, angles around circle)
-    """
-    # Open the GIF
     gif = Image.open(gif_path)
 
-    # Get total frames in GIF
     total_gif_frames = 0
     try:
         while True:
@@ -43,35 +23,26 @@ def gif_to_texture(gif_path, output_path, num_frames, led_count=52, tex_width=25
     print(f"Extracting {num_frames} frames")
     print(f"Target size: {tex_width}x{led_count} per frame")
 
-    # Open output file
     with open(output_path, 'w') as f:
         for frame_idx in range(num_frames):
-            # Sample evenly across all GIF frames
             gif_frame_idx = int((frame_idx * total_gif_frames) / num_frames)
             gif.seek(gif_frame_idx)
 
-            # Convert to RGB if needed
             frame = gif.convert('RGB')
 
-            # Resize to target dimensions (tex_width x led_count)
-            # Use LANCZOS for high-quality downsampling
             frame = frame.resize((tex_width, led_count), Image.Resampling.LANCZOS)
 
-            # Flip vertically (flip on x-axis) and horizontally (flip on y-axis)
             frame = frame.transpose(Image.FLIP_TOP_BOTTOM)
             frame = frame.transpose(Image.FLIP_LEFT_RIGHT)
 
-            # Convert to numpy array
             frame_array = np.array(frame)
 
             print(f"Processing frame {frame_idx}/{num_frames} (GIF frame {gif_frame_idx})")
 
-            # Write frame data: for each LED (row), write all columns
             for led_num in range(led_count):
                 for col in range(tex_width):
                     r, g, b = frame_array[led_num, col]
 
-                    # Write as 24-bit binary in GRB format: GGGGGGGGRRRRRRRRBBBBBBBB
                     pixel_bin = format(g, '08b') + format(r, '08b') + format(b, '08b')
                     f.write(pixel_bin + '\n')
 
