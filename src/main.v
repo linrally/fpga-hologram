@@ -7,7 +7,7 @@ module main(
     output wire [4:0] LED    
 );
     //--------------------------------  MAPPER UNIT  --------------------------------
-    assign LED[0] = break_din;
+    //assign LED[0] = break_din;
 
     localparam LED_COUNT  = 52;
     localparam TEX_WIDTH  = 256;
@@ -73,7 +73,7 @@ module main(
 	localparam INSTR_FILE = "main";
 	
 	// Main Processing Unit
-	processor CPU(.clock(clock), .reset(reset), 
+	processor CPU(.clock(clk), .reset(reset), 
 								
 		// ROM
 		.address_imem(instAddr), .q_imem(instData),
@@ -89,17 +89,17 @@ module main(
 	
 	// Instruction Memory (ROM)
 	ROM #(.DATA_WIDTH(32), .ADDRESS_WIDTH(12), .DEPTH(4096), .MEMFILE({INSTR_FILE, ".mem"}))
-	InstMem(.clk(clock), 
+	InstMem(.clk(clk), 
 		.addr(instAddr[11:0]), 
 		.dataOut(instData));
 	
 	// Register File
-	regfile RegisterFile(.clock(clock), 
+	regfile RegisterFile(.clock(clk), 
 		.ctrl_writeEnable(rwe), .ctrl_reset(reset), 
 		.ctrl_writeReg(rd),
 		.ctrl_readRegA(rs1), .ctrl_readRegB(rs2), 
 		.data_writeReg(rData), .data_readRegA(regA), .data_readRegB(regB));
     
-    RAM_MMIO RAM_MMIO(.clk(clk), .wEn(mwe), .addr(memAddr[11:0]), .dataIn(memDataIn), .dataOut(memDataOut), .BTNU(BTNU), .LED(LED[4:1]));
+    RAM_MMIO RAM_MMIO(.clk(clk), .wEn(mwe), .addr(memAddr[11:0]), .dataIn(memDataIn), .dataOut(memDataOut), .BTNU(BTNU), .LED(LED));
 
 endmodule
