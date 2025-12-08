@@ -54,7 +54,7 @@ asim:
 		topmod=$$tbname; \
 		argsfile="sim/asm-tests/$${tbname}.args"; \
 		echo "================================================"; \
-		echo "$$tbname (top module $$topmod)"; \
+		echo "$$tbname"; \
 		echo "================================================"; \
 		if [ ! -f $$argsfile ]; then \
 			echo "No args file $$argsfile, skipping."; \
@@ -74,6 +74,7 @@ asim:
 			echo "Running $$base"; \
 			out=$$(vvp sim/build/$$base 2>&1); \
 			echo "$$out" | grep -v '^VCD'; \
+			echo ""; \
 		done < $$argsfile; \
 	done; \
 	echo "\033[1;32mAll tests passed!\033[0m"
