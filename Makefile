@@ -55,21 +55,25 @@ sim-proc:
 	echo "Running processor tests..."; \
 	while read arg; do \
 		[ -z "$$arg" ] && continue; \
-		prog="sim/proc/$$arg"; \
-		echo "Assembling $$prog.s..."; \
-		python3 assembler/assemble.py $$prog.s -o $$prog.mem || exit 1; \
-		base="Wrapper_tb_$$arg"; \
+		sfile="$$arg"; \
+		memfile="$${sfile%.s}.mem"; \
+		echo "Assembling $$sfile -> $$memfile ..."; \
+		python3 assembler/assemble.py $$sfile -o $$memfile || exit 1; \
+		testname=$$(basename $$sfile .s); \
+		base="Wrapper_tb_$${testname}"; \
 		echo "================================================"; \
-		echo "Compiling $$tb with INSTR_FILE=$$prog.mem"; \
+		echo "Compiling $$tb with INSTR_FILE=$$memfile"; \
 		echo "================================================"; \
-		iverilog -o sim/build/$$base -s Wrapper_tb -PWrapper_tb.INSTR_FILE=\"$$arg\" $(RTL) $$tb || exit 1; \
+		iverilog -o sim/build/$$base -s Wrapper_tb \
+			-PWrapper_tb.INSTR_FILE=\"$$memfile\" \
+			$(RTL) $$tb || exit 1; \
 		bin=$$(pwd)/sim/build/$$base; \
 		echo "Running $$base..."; \
-		out=$$( cd sim/proc && vvp $$bin 2>&1 ); \
+		out=$$( vvp $$bin 2>&1 ); \
 		status=$$?; \
 		echo "$$out" | grep -v '^VCD'; \
 		if [ $$status -ne 0 ]; then \
-			echo "\033[1;31mFAILED on $$arg in $$base\033[0m"; \
+			echo "\033[1;31mFAILED on $$sfile in $$base\033[0m"; \
 			exit 1; \
 		fi; \
 	done < $$args; \
