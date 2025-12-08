@@ -21,6 +21,10 @@ main:
     addi $t7, $zero, 0      # frame counter = 0
     addi $t6, $zero, 0      # noop accumulator = 0
     addi $t3, $zero, 1      # seed LFSR (non-zero)
+    addi $s1, $zero, 0      # last BTN_INV state
+    addi $s2, $zero, 0      # last BTN_BRT state
+    addi $s3, $zero, 0      # brightness level
+    addi $s4, $zero, 0      # invert flag
 
     # Clear scratch RAM [1100..1108] for deterministic checksum
     addi $t4, $zero, 1100   # base address
@@ -31,9 +35,16 @@ clear_scratch:
     addi $t5, $t5, -1
     bne  $t5, $zero, clear_scratch
 
+    # Initialize brightness/invert MMIO
+    sw   $s3, 1004($zero)   # brightness preset = 0
+    sw   $s4, 1005($zero)   # invert flag = 0
+
 loop:
     # Read BTNU from MMIO address 1000
     lw   $t2, 1000($zero)   # t2 = BTNU (0 or 1)
+    # Read BTN_INV (invert toggle) and BTN_BRT (brightness step)
+    lw   $t8, 1002($zero)
+    lw   $t9, 1003($zero)
 
     # Software debounce stub (harmless delay / noop)
     addi $t5, $zero, 8      # small debounce count
@@ -65,6 +76,38 @@ ok_index:
 
 continue:
     add  $t0, $t2, $zero    # last_button = current
+
+    # Invert button: rising edge toggles invert flag and writes MMIO 1005
+    bne  $t8, $s1, inv_changed
+    j    inv_done
+inv_changed:
+    bne  $t8, $zero, inv_rising
+    j    inv_done
+inv_rising:
+    addi $s4, $s4, 1        # toggle: 0 -> 1 -> 0
+    addi $t5, $zero, 2
+    blt  $s4, $t5, inv_ok
+    addi $s4, $zero, 0
+inv_ok:
+    sw   $s4, 1005($zero)
+inv_done:
+    add  $s1, $t8, $zero    # save last invert state
+
+    # Brightness button: rising edge steps brightness (0..3) and writes MMIO 1004
+    bne  $t9, $s2, brt_changed
+    j    brt_done
+brt_changed:
+    bne  $t9, $zero, brt_rising
+    j    brt_done
+brt_rising:
+    addi $s3, $s3, 1
+    addi $t5, $zero, 4      # max levels = 4 (0..3)
+    blt  $s3, $t5, brt_ok
+    addi $s3, $zero, 0
+brt_ok:
+    sw   $s3, 1004($zero)
+brt_done:
+    add  $s2, $t9, $zero    # save last brightness state
 
     # Call utility block (debounce average, LFSR, checksum)
     jal util_block          # returns to next instruction

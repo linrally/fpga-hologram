@@ -135,12 +135,14 @@ def main():
     print(f"✓ Preview saved: {preview_file}")
     
     # Write binary format (row-major order)
-    print(f"\nWriting texture.mem file...")
+    print(f"\nWriting texture.mem file (vertical flip applied for correct display)...")
     pixel_count = 0
     with open(output_file, "w") as f:
         for row in range(TEX_HEIGHT):
             for col in range(total_width):
-                rgb = concatenated.getpixel((col, row))
+                # Flip vertically when writing so the display is upright
+                src_row = TEX_HEIGHT - 1 - row
+                rgb = concatenated.getpixel((col, src_row))
                 f.write(to_bin_grb(rgb) + "\n")
                 pixel_count += 1
     

@@ -1,7 +1,9 @@
 module main(
     input  wire clk,         
     input  wire reset,
-    input  wire BTNU,
+    input  wire BTNU,        // existing button: texture cycle
+    input  wire BTN_INV,     // new button: color invert toggle
+    input  wire BTN_BRT,     // new button: brightness preset step
     input  wire break_din,   
     output wire ws2812_dout, 
     output wire [4:0] LED    
@@ -53,8 +55,37 @@ module main(
 
     // ROM interface - total size is 640×52 = 33,280 pixels
     wire [23:0] pixel_color;
+    wire [23:0] pixel_color_adj;
     ROM #(.DATA_WIDTH(24), .ADDRESS_WIDTH($clog2(TOTAL_TEX_WIDTH*LED_COUNT)), .DEPTH(TOTAL_TEX_WIDTH*LED_COUNT), .MEMFILE("texture.mem"))
         tex0_rom (.clk(clk), .addr(rom_addr), .dataOut(pixel_color));
+
+    // Brightness / invert from MMIO
+    wire [3:0] brightness_level;
+    wire       invert_flag;
+
+    // Simple brightness scale: map level 0..3 to shift amounts (0..3)
+    // level -> shift: 0->0 (100%), 1->1 (~50%), 2->2 (~25%), 3->3 (~12%)
+    wire [1:0] br_shift = (brightness_level[1:0]); // use bottom 2 bits
+
+    // Per-channel adjust
+    wire [7:0] r_in = pixel_color[15:8];
+    wire [7:0] g_in = pixel_color[23:16];
+    wire [7:0] b_in = pixel_color[7:0];
+
+    wire [7:0] r_inv = ~r_in;
+    wire [7:0] g_inv = ~g_in;
+    wire [7:0] b_inv = ~b_in;
+
+    wire [7:0] r_sel = invert_flag ? r_inv : r_in;
+    wire [7:0] g_sel = invert_flag ? g_inv : g_in;
+    wire [7:0] b_sel = invert_flag ? b_inv : b_in;
+
+    // Brightness scaling by right shift
+    wire [7:0] r_out = r_sel >> br_shift;
+    wire [7:0] g_out = g_sel >> br_shift;
+    wire [7:0] b_out = b_sel >> br_shift;
+
+    assign pixel_color_adj = {g_out, r_out, b_out}; // GRB order
 
     neopixel_controller #(
         .px_count_width (6),
@@ -64,7 +95,7 @@ module main(
         .clk        (clk),
         .rst        (1'b0),
         .start      (1'b1),
-        .pixel      (pixel_color),
+        .pixel      (pixel_color_adj),
         .next_px_num(next_px_num),
         .signal_out (ws2812_dout)
     );
@@ -107,6 +138,19 @@ module main(
 		.ctrl_readRegA(rs1), .ctrl_readRegB(rs2), 
 		.data_writeReg(rData), .data_readRegA(regA), .data_readRegB(regB));
     
-    RAM_MMIO RAM_MMIO(.clk(clk), .wEn(mwe), .addr(memAddr[11:0]), .dataIn(memDataIn), .dataOut(memDataOut), .BTNU(BTNU), .LED(LED), .texture_idx(texture_idx));
+    RAM_MMIO RAM_MMIO(
+        .clk(clk),
+        .wEn(mwe),
+        .addr(memAddr[11:0]),
+        .dataIn(memDataIn),
+        .dataOut(memDataOut),
+        .BTNU(BTNU),
+        .BTN_INV(BTN_INV),
+        .BTN_BRT(BTN_BRT),
+        .LED(LED),
+        .texture_idx(texture_idx),
+        .brightness_level(brightness_level),
+        .invert_flag(invert_flag)
+    );
 
 endmodule

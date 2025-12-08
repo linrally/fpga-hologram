@@ -10,4 +10,9 @@ set_property -dict { PACKAGE_PIN R18   IOSTANDARD LVCMOS33 } [get_ports { LED[4]
 
 set_property -dict { PACKAGE_PIN M18   IOSTANDARD LVCMOS33 } [get_ports { BTNU }]; #IO_L4N_T0_D05_14 Sch=btnu
 
+# TODO: set correct pins for additional buttons
+# Example (Nexys A7 reference; adjust to your board pinout):
+# set_property -dict { PACKAGE_PIN P18   IOSTANDARD LVCMOS33 } [get_ports { BTN_INV }]; # Sch=btnd (placeholder)
+# set_property -dict { PACKAGE_PIN N17   IOSTANDARD LVCMOS33 } [get_ports { BTN_BRT }]; # Sch=btnr (placeholder)
+
 set_property PULLUP true [get_ports { break_din }];
