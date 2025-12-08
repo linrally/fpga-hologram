@@ -9,6 +9,8 @@ module main(
     //--------------------------------  MAPPER UNIT  --------------------------------
     localparam LED_COUNT  = 52;
     localparam TEX_WIDTH  = 256;
+    localparam NUM_FRAMES = 24;  // number of animation frames
+    localparam FRAME_SIZE = TEX_WIDTH * LED_COUNT;  // pixels per frame
 
     wire break_clean;
 
@@ -39,12 +41,15 @@ module main(
 
     // ROM interface
     wire [23:0] pixel_color;
+    wire [7:0] frame_idx;  // from MMIO
     wire [$clog2(TEX_WIDTH*LED_COUNT)-1:0] rom_addr;
-    assign rom_addr = next_px_num * TEX_WIDTH + col;
 
-    wire [3:0] texture_idx;
+    // Calculate ROM address: frame_offset + led_offset + column
+    wire [$clog2(TEX_WIDTH*LED_COUNT)-1:0] frame_offset;
+    assign frame_offset = frame_idx * FRAME_SIZE;
+    assign rom_addr = frame_offset + next_px_num * TEX_WIDTH + col;
 
-    ROM #(.DATA_WIDTH(24), .ADDRESS_WIDTH($clog2(TEX_WIDTH*LED_COUNT)), .DEPTH(TEX_WIDTH*LED_COUNT), .MEMFILE("texture.mem"))
+    ROM #(.DATA_WIDTH(24), .ADDRESS_WIDTH($clog2(FRAME_SIZE*NUM_FRAMES)), .DEPTH(FRAME_SIZE*NUM_FRAMES), .MEMFILE("texture.mem"))
         tex0_rom (.clk(clk), .addr(rom_addr), .dataOut(pixel_color));
 
     neopixel_controller #(
@@ -98,6 +103,6 @@ module main(
 		.ctrl_readRegA(rs1), .ctrl_readRegB(rs2), 
 		.data_writeReg(rData), .data_readRegA(regA), .data_readRegB(regB));
     
-    RAM_MMIO RAM_MMIO(.clk(clk), .wEn(mwe), .addr(memAddr[11:0]), .dataIn(memDataIn), .dataOut(memDataOut), .BTNU(BTNU), .LED(LED));
+    RAM_MMIO RAM_MMIO(.clk(clk), .wEn(mwe), .addr(memAddr[11:0]), .dataIn(memDataIn), .dataOut(memDataOut), .BTNU(BTNU), .LED(LED), .frame_idx(frame_idx));
 
 endmodule
