@@ -8,7 +8,7 @@ module main(
 );
     //--------------------------------  MAPPER UNIT  --------------------------------
     localparam LED_COUNT  = 52;
-    localparam TEX_WIDTH  = 256;
+    localparam TEX_WIDTH  = 64;
     localparam NUM_FRAMES = 76;  // number of animation frames
     localparam FRAME_SIZE = TEX_WIDTH * LED_COUNT;  // pixels per frame
 
@@ -56,10 +56,9 @@ module main(
 
     wire [5:0] next_px_num;  // from neopixel_controller: which LED index
 
-    // Scale theta (0..63) → column (0..255)
-    wire [13:0] theta_scaled = theta * TEX_WIDTH;  // 6+8 bits = 14 bits
+    // Scale theta (0..63) → column (0..63)
     wire [$clog2(TEX_WIDTH)-1:0] col;
-    assign col = theta_scaled >> 6;  // divide by 64
+    assign col = theta;  // direct mapping, both are 0..63
 
     // ROM interface
     wire [23:0] pixel_color;

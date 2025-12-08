@@ -8,7 +8,7 @@ from PIL import Image
 import numpy as np
 
 
-def gif_to_texture(gif_path, output_path, led_count=52, tex_width=256):
+def gif_to_texture(gif_path, output_path, led_count=52, tex_width=64):
     gif = Image.open(gif_path)
 
     num_frames = 0
@@ -66,8 +66,8 @@ def main():
     parser.add_argument('output', help='Output .mem file', nargs='?', default='texture.mem')
     parser.add_argument('--leds', type=int, default=52,
                         help='Number of LEDs / texture height (default: 52)')
-    parser.add_argument('--width', '-w', type=int, default=256,
-                        help='Texture width / columns (default: 256)')
+    parser.add_argument('--width', '-w', type=int, default=64,
+                        help='Texture width / columns (default: 64)')
 
     args = parser.parse_args()
 

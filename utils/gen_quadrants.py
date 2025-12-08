@@ -3,7 +3,7 @@ python utils/gen.py image.png src/texture.mem
 """
 from PIL import Image
 
-TEX_WIDTH = 256
+TEX_WIDTH = 64
 TEX_HEIGHT = 52
 
 colors = [

@@ -2,7 +2,7 @@ from PIL import Image
 import numpy as np
 import sys
 
-TEX_WIDTH = 256
+TEX_WIDTH = 64
 TEX_HEIGHT = 52
 
 def avg_color(img, x0, y0, x1, y1):
