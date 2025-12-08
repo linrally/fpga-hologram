@@ -10,7 +10,9 @@ module main(
     //assign LED[0] = break_din;
 
     localparam LED_COUNT  = 52;
-    localparam TEX_WIDTH  = 256;
+    localparam TEX_WIDTH  = 128;  // Width per texture (changed from 256 to 128)
+    localparam NUM_TEXTURES = 5;  // Number of textures in texture.mem
+    localparam TOTAL_TEX_WIDTH = TEX_WIDTH * NUM_TEXTURES;  // Total width: 640
 
     wire break_clean;
 
@@ -34,19 +36,24 @@ module main(
 
     wire [5:0] next_px_num;  // from neopixel_controller: which LED index
 
-    // Scale theta (0..63) → column (0..255)
-    wire [13:0] theta_scaled = theta * TEX_WIDTH;  // 6+8 bits = 14 bits
+    // Scale theta (0..63) → column (0..127) within selected texture
+    wire [13:0] theta_scaled = theta * TEX_WIDTH;  // 6+7 bits = 13 bits
     wire [$clog2(TEX_WIDTH)-1:0] col;
     assign col = theta_scaled >> 6;  // divide by 64
 
-    // ROM interface
-    wire [23:0] pixel_color;
-    wire [$clog2(TEX_WIDTH*LED_COUNT)-1:0] rom_addr;
-    assign rom_addr = next_px_num * TEX_WIDTH + col;
-
+    // Texture selection from CPU (via MMIO)
     wire [3:0] texture_idx;
 
-    ROM #(.DATA_WIDTH(24), .ADDRESS_WIDTH($clog2(TEX_WIDTH*LED_COUNT)), .DEPTH(TEX_WIDTH*LED_COUNT), .MEMFILE("texture.mem"))
+    // ROM address calculation with texture offset
+    // rom_addr = row * TOTAL_TEX_WIDTH + col + (texture_idx * TEX_WIDTH)
+    // This selects the correct texture column range
+    wire [13:0] texture_offset = texture_idx * TEX_WIDTH;  // Offset to texture start column
+    wire [$clog2(TOTAL_TEX_WIDTH*LED_COUNT)-1:0] rom_addr;
+    assign rom_addr = next_px_num * TOTAL_TEX_WIDTH + col + texture_offset;
+
+    // ROM interface - total size is 640×52 = 33,280 pixels
+    wire [23:0] pixel_color;
+    ROM #(.DATA_WIDTH(24), .ADDRESS_WIDTH($clog2(TOTAL_TEX_WIDTH*LED_COUNT)), .DEPTH(TOTAL_TEX_WIDTH*LED_COUNT), .MEMFILE("texture.mem"))
         tex0_rom (.clk(clk), .addr(rom_addr), .dataOut(pixel_color));
 
     neopixel_controller #(
@@ -100,6 +107,6 @@ module main(
 		.ctrl_readRegA(rs1), .ctrl_readRegB(rs2), 
 		.data_writeReg(rData), .data_readRegA(regA), .data_readRegB(regB));
     
-    RAM_MMIO RAM_MMIO(.clk(clk), .wEn(mwe), .addr(memAddr[11:0]), .dataIn(memDataIn), .dataOut(memDataOut), .BTNU(BTNU), .LED(LED));
+    RAM_MMIO RAM_MMIO(.clk(clk), .wEn(mwe), .addr(memAddr[11:0]), .dataIn(memDataIn), .dataOut(memDataOut), .BTNU(BTNU), .LED(LED), .texture_idx(texture_idx));
 
 endmodule
