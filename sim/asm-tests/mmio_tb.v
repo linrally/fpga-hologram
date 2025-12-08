@@ -53,7 +53,7 @@ module mmio_tb #(parameter INSTR_FILE = "");
 
         for (cycles = 0; cycles < num_cycles; cycles = cycles + 1) begin
 
-            case (cycles)
+            case (cycles) // button presses need to be long enough to be detected by the processor
                 10: BTNU = 1;
                 50: BTNU = 0;
                 80: BTNU = 1;
@@ -66,7 +66,7 @@ module mmio_tb #(parameter INSTR_FILE = "");
 
         end
 
-        $display("LED = %0d", LED[3:1]);
+        $display("LED = %0d", LED); // expected 3
 
         #100;
         $finish;
