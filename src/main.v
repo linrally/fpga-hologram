@@ -7,8 +7,6 @@ module main(
     output wire [4:0] LED    
 );
     //--------------------------------  MAPPER UNIT  --------------------------------
-    //assign LED[0] = break_din;
-
     localparam LED_COUNT  = 52;
     localparam TEX_WIDTH  = 256;
 

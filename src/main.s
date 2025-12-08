@@ -18,8 +18,7 @@ rising:
     addi $t1, $zero, 0
 
 no_wrap:
-    sll  $t4, $t1, 1 # 3 bits for LED, skip first
-    sw   $t4, 1001($zero)
+    sw   $t1, 1001($zero)
 
 continue:
     add  $t0, $t2, $zero
