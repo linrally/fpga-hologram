@@ -37,8 +37,8 @@ module RAM_MMIO(
     assign LED = led_reg;
 
     assign dataOut =
-        (addr == 12'd1000) ? {31'd0, BTNU}      :
-        (addr == 12'd1001) ? {27'd0, led_reg}   :
-                             memDataOut_raw;       // default: RAM
+        (addr == 12'd1000) ? {31'd0, BTNU}:
+        (addr == 12'd1001) ? {27'd0, led_reg}:
+                             memDataOut_raw; // default to RAM
 
 endmodule
