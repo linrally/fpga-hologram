@@ -11,7 +11,8 @@ RTL := $(filter-out $(EXCLUDE_RTL), $(RTL))
 .PHONY: sim
 
 # args need to have a trailing newline (TODO: fix)
-sim:
+
+sim: # simulate verilog
 	@mkdir -p sim/build; \
 	for tb in $(TESTS); do \
 		base=$$(basename $$tb .v); \
@@ -48,7 +49,7 @@ sim:
 	done
 	@echo "\033[1;32mAll tests passed!\033[0m"
 
-sim-proc:
+psim: # processor simulation
 	@mkdir -p sim/build; \
 	args="sim/proc/Wrapper_tb.args"; \
 	tb="sim/proc/Wrapper_tb.v"; \
@@ -57,12 +58,12 @@ sim-proc:
 		[ -z "$$arg" ] && continue; \
 		sfile="$$arg"; \
 		memfile="$${sfile%.s}.mem"; \
-		echo "Assembling $$sfile -> $$memfile ..."; \
+		echo "================================================"; \
+		echo "Assembling $$sfile -> $$memfile"; \
 		python3 assembler/assemble.py $$sfile -o $$memfile || exit 1; \
 		testname=$$(basename $$sfile .s); \
 		base="Wrapper_tb_$${testname}"; \
-		echo "================================================"; \
-		echo "Compiling $$tb with INSTR_FILE=$$memfile"; \
+		echo "Compiling $$tb with $$memfile"; \
 		echo "================================================"; \
 		iverilog -o sim/build/$$base -s Wrapper_tb \
 			-PWrapper_tb.INSTR_FILE=\"$$memfile\" \
