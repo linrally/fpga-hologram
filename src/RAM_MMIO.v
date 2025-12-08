@@ -20,10 +20,10 @@ module RAM_MMIO(
         .ADDRESS_WIDTH(12),
         .DEPTH(4096)
     ) ProcMem (
-        .clk     (clk),
-        .wEn     (wEn),
-        .addr    (addr),
-        .dataIn  (dataIn),
+        .clk (clk),
+        .wEn (wEn),
+        .addr (addr),
+        .dataIn (dataIn),
         .dataOut (memDataOut_raw)
     );
 
