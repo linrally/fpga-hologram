@@ -1,3 +1,8 @@
+/*
+1000: BTNU (R)
+1001: LED[4:0] (RW) 
+*/
+
 module RAM_MMIO(
     input  wire        clk,
     input  wire        wEn,
