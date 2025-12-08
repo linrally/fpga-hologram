@@ -1,4 +1,4 @@
-module theta_from_breakbeam #(
+module angle_mapper #(
     parameter integer THETA_BITS  = 6,   // number of bits for theta (64 steps)
     parameter integer PERIOD_BITS = 28   // bits for period counter (clocks/rev)
 )(

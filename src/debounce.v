@@ -1,4 +1,4 @@
-module breakbeam_sync_debounce (
+module debounce (
     input  wire clk,
     input  wire din_raw,   
     output reg  din_clean  

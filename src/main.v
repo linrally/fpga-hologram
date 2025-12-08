@@ -34,7 +34,7 @@ module main(
 
     wire break_clean;
 
-    breakbeam_sync_debounce deb (
+    debounce du (
         .clk      (clk),
         .din_raw  (break_din),
         .din_clean(break_clean)
@@ -42,7 +42,7 @@ module main(
 
     wire [5:0] theta; // 6-bit angle (64 steps per revolution)
 
-    theta_from_breakbeam #(
+    angle_mapper #(
         .THETA_BITS (6),
         .PERIOD_BITS(28) // needs to be large enough to count one revolution in cycles
                          // 2^28 = 268,435,456 cycles = 2.68 seconds @ 100 MHz
