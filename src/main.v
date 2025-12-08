@@ -59,6 +59,19 @@ module main(
     assign col = theta;  // map theta to column 1 to 1
 
     wire [23:0] pixel_color;
+    wire [23:0] pixel_color_adj;
+    wire [1:0] brightness;
+
+    wire [7:0] r_in = pixel_color[15:8];
+    wire [7:0] g_in = pixel_color[23:16];
+    wire [7:0] b_in = pixel_color[7:0];
+
+    wire [7:0] r_out = r_in >> brightness;
+    wire [7:0] g_out = g_in >> brightness;
+    wire [7:0] b_out = b_in >> brightness;
+
+    assign pixel_color_adj = {r_out, g_out, b_out};
+
     wire [$clog2(FRAME_SIZE*NUM_FRAMES)-1:0] rom_addr;
 
     wire [$clog2(FRAME_SIZE*NUM_FRAMES)-1:0] frame_offset;
@@ -66,7 +79,7 @@ module main(
     assign rom_addr = frame_offset + next_px_num * TEX_WIDTH + col;
 
     ROM #(.DATA_WIDTH(24), .ADDRESS_WIDTH($clog2(FRAME_SIZE*NUM_FRAMES)), .DEPTH(FRAME_SIZE*NUM_FRAMES), .MEMFILE("texture.mem"))
-        tex0_rom (.clk(clk), .addr(rom_addr), .dataOut(pixel_color));
+        tex0_rom (.clk(clk), .addr(rom_addr), .dataOut(pixel_color_adj));
 
     neopixel_controller #(
         .px_count_width (6),
@@ -112,6 +125,6 @@ module main(
 		.ctrl_readRegA(rs1), .ctrl_readRegB(rs2), 
 		.data_writeReg(rData), .data_readRegA(regA), .data_readRegB(regB));
     
-    RAM_MMIO RAM_MMIO(.clk(clk), .wEn(mwe), .addr(memAddr[11:0]), .dataIn(memDataIn), .dataOut(memDataOut), .BTNU(BTNU), .LED(LED));
+    RAM_MMIO RAM_MMIO(.clk(clk), .wEn(mwe), .addr(memAddr[11:0]), .dataIn(memDataIn), .dataOut(memDataOut), .BTNU(BTNU), .LED(LED), .brightness(brightness));
 
 endmodule

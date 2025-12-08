@@ -10,7 +10,8 @@ module RAM_MMIO(
     input  wire [31:0] dataIn,
     output wire [31:0] dataOut,
     input  wire BTNU,
-    output wire [4:0] LED
+    output wire [4:0] LED,
+    output wire [1:0] brightness
 );
 
     wire [31:0] memDataOut_raw;
@@ -28,17 +29,22 @@ module RAM_MMIO(
     );
 
     reg [4:0] led_reg = 5'd0;
+    reg [1:0] brightness_reg = 2'd0;
 
     always @(posedge clk) begin
         if (wEn && addr == 12'd1001)
             led_reg <= dataIn[4:0];
+        if (wEn && addr == 12'd1002)
+            brightness_reg <= dataIn[1:0];
     end
 
     assign LED = led_reg;
+    assign brightness = brightness_reg;
 
     assign dataOut =
         (addr == 12'd1000) ? {31'd0, BTNU}:
         (addr == 12'd1001) ? {27'd0, led_reg}:
+        (addr == 12'd1002) ? {30'd0, brightness_reg}:
                              memDataOut_raw;       // default: RAM
 
 endmodule
