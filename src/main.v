@@ -1,8 +1,8 @@
 module main(
-    input  wire clk,         
-    input  wire reset,
-    input  wire BTNU,
-    input  wire break_din,   
+    input wire clk,         
+    input wire reset,
+    input wire BTNU,
+    input wire break_din,   
     output wire ws2812_dout, 
     output wire [4:0] LED    
 );

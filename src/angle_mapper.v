@@ -2,29 +2,29 @@ module angle_mapper #(
     parameter integer THETA_BITS  = 6,   // number of bits for theta (64 steps)
     parameter integer PERIOD_BITS = 28   // bits for period counter (clocks/rev)
 )(
-    input  wire                    clk,
-    input  wire                    reset,
-    input  wire                    break_clean,   // debounced beam signal
-    output reg  [THETA_BITS-1:0]   theta = {THETA_BITS{1'b0}}
+    input  wire clk,
+    input  wire reset,
+    input  wire break_clean,   // debounced beam signal
+    output reg  [THETA_BITS-1:0] theta = {THETA_BITS{1'b0}}
 );
     localparam integer THETA_STEPS = (1 << THETA_BITS);
 
-    reg [PERIOD_BITS-1:0] period_counter  = {PERIOD_BITS{1'b0}};
-    reg [PERIOD_BITS-1:0] period_avg      = {PERIOD_BITS{1'b0}};
+    reg [PERIOD_BITS-1:0] period_counter = {PERIOD_BITS{1'b0}};
+    reg [PERIOD_BITS-1:0] period_avg = {PERIOD_BITS{1'b0}};
 
     reg [PERIOD_BITS-1:0] clocks_per_step = {PERIOD_BITS{1'b0}};
-    reg [PERIOD_BITS-1:0] step_counter    = {PERIOD_BITS{1'b0}};
+    reg [PERIOD_BITS-1:0] step_counter = {PERIOD_BITS{1'b0}};
 
     reg prev_beam = 1'b0;
 
     always @(posedge clk) begin
         if (reset) begin
-            theta           <= {THETA_BITS{1'b0}};
-            period_counter  <= {PERIOD_BITS{1'b0}};
-            period_avg      <= {PERIOD_BITS{1'b0}};
+            theta <= {THETA_BITS{1'b0}};
+            period_counter <= {PERIOD_BITS{1'b0}};
+            period_avg <= {PERIOD_BITS{1'b0}};
             clocks_per_step <= {PERIOD_BITS{1'b0}};
-            step_counter    <= {PERIOD_BITS{1'b0}};
-            prev_beam       <= 1'b0;
+            step_counter <= {PERIOD_BITS{1'b0}};
+            prev_beam <= 1'b0;
         end else begin
             prev_beam <= break_clean;
 
@@ -47,7 +47,7 @@ module angle_mapper #(
                 clocks_per_step <= period_avg >> THETA_BITS;
 
                 period_counter <= {PERIOD_BITS{1'b0}};
-                step_counter   <= {PERIOD_BITS{1'b0}};
+                step_counter <= {PERIOD_BITS{1'b0}};
             end else begin // between pulses, walk theta according to clocks_per_step
                 if (clocks_per_step != {PERIOD_BITS{1'b0}}) begin
                     step_counter <= step_counter + 1'b1;

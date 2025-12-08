@@ -1,6 +1,6 @@
 module debounce (
-    input  wire clk,
-    input  wire din_raw,   
+    input wire clk,
+    input wire din_raw,   
     output reg  din_clean  
 );
     // synchronizer - prevents metastability by capturing the signal with two flip-flops

@@ -4,13 +4,13 @@
 */
 
 module RAM_MMIO(
-    input  wire        clk,
-    input  wire        wEn,
+    input  wire clk,
+    input  wire wEn,
     input  wire [11:0] addr,
     input  wire [31:0] dataIn,
     output wire [31:0] dataOut,
-    input  wire        BTNU,
-    output wire [4:0]  LED
+    input  wire BTNU,
+    output wire [4:0] LED
 );
 
     wire [31:0] memDataOut_raw;
@@ -39,6 +39,6 @@ module RAM_MMIO(
     assign dataOut =
         (addr == 12'd1000) ? {31'd0, BTNU}:
         (addr == 12'd1001) ? {27'd0, led_reg}:
-                             memDataOut_raw; // default to RAM
+                             memDataOut_raw;       // default: RAM
 
 endmodule
