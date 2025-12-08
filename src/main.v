@@ -11,8 +11,8 @@ module main(
 
     localparam LED_COUNT  = 52;
     localparam TEX_WIDTH  = 128;  // Width per texture (changed from 256 to 128)
-    localparam NUM_TEXTURES = 5;  // Number of textures in texture.mem
-    localparam TOTAL_TEX_WIDTH = TEX_WIDTH * NUM_TEXTURES;  // Total width: 640
+    localparam NUM_TEXTURES = 3;  // Number of textures in texture.mem (duke, globe, gradient)
+    localparam TOTAL_TEX_WIDTH = TEX_WIDTH * NUM_TEXTURES;  // Total width: 384
 
     wire break_clean;
 
