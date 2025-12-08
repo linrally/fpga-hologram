@@ -70,7 +70,7 @@ module main(
     wire [7:0] g_out = g_in >> brightness;
     wire [7:0] b_out = b_in >> brightness;
 
-    assign pixel_color_adj = {r_out, g_out, b_out};
+    assign pixel_color_adj = {g_out, r_out, b_out}; // drive takes GRB
 
     wire [$clog2(FRAME_SIZE*NUM_FRAMES)-1:0] rom_addr;
 

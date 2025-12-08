@@ -1,5 +1,6 @@
 TESTS := $(shell find sim -name "*_tb.v")
-RTL   := $(shell find src -name "*.v")
+RTL := $(shell find src -name "*.v")
+RTL += $(shell find sim -name "*_stub.v") # add stubs
 
 EXCLUDE := sim/asm-tests/% sim/main_tb.v
 BASE_TESTS := $(filter-out $(EXCLUDE),$(TESTS))
@@ -46,10 +47,12 @@ sim: # simulate verilog
 	done
 	@echo "\033[1;32mAll tests passed!\033[0m"
 
+ASM_TESTS := $(shell find sim/asm-tests -name "*_tb.v")
+
 asim: # simulate with assembly tests
 	@mkdir -p sim/build; \
 	echo "Running assembly tests..."; \
-	for tbfile in $$(find sim/asm-tests -name "*_tb.v"); do \
+	for tbfile in $(ASM_TESTS); do \
 		tbname=$$(basename $$tbfile .v); \
 		topmod=$$tbname; \
 		argsfile="sim/asm-tests/$${tbname}.args"; \
