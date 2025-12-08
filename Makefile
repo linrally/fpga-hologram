@@ -5,7 +5,7 @@ EXCLUDE := sim/asm-tests/% sim/main_tb.v
 BASE_TESTS := $(filter-out $(EXCLUDE),$(TESTS))
 
 
-.PHONY: sim
+.PHONY: sim asim assemble
 
 # args need to have a trailing newline (TODO: fix)
 
@@ -46,7 +46,7 @@ sim: # simulate verilog
 	done
 	@echo "\033[1;32mAll tests passed!\033[0m"
 
-asim:
+asim: # simulate with assembly tests
 	@mkdir -p sim/build; \
 	echo "Running assembly tests..."; \
 	for tbfile in $$(find sim/asm-tests -name "*_tb.v"); do \

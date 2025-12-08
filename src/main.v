@@ -9,22 +9,20 @@ module main(
     //--------------------------------  MAPPER UNIT  --------------------------------
     localparam LED_COUNT  = 52;
     localparam TEX_WIDTH  = 64;
-    localparam NUM_FRAMES = 30;  // number of animation frames
-    localparam FRAME_SIZE = TEX_WIDTH * LED_COUNT;  // pixels per frame
+    localparam NUM_FRAMES = 30;  
+    localparam FRAME_SIZE = TEX_WIDTH * LED_COUNT; 
 
-    // 15 fps animation timer
-    localparam CLK_FREQ = 100_000_000;  // 100 MHz clock
+    localparam CLK_FREQ = 100_000_000;  
     localparam FPS = 15;
     localparam CYCLES_PER_FRAME = CLK_FREQ / FPS;  // 100M / 15 = 6,666,667
 
     reg [31:0] frame_timer = 32'd0;
-    reg [7:0] frame_idx = 8'd0;  // current animation frame
+    reg [7:0] frame_idx = 8'd0; 
 
     always @(posedge clk) begin
         if (frame_timer >= CYCLES_PER_FRAME - 1) begin
             frame_timer <= 32'd0;
 
-            // Auto-increment frame
             if (frame_idx >= NUM_FRAMES - 1)
                 frame_idx <= 8'd0;
             else
@@ -42,29 +40,27 @@ module main(
         .din_clean(break_clean)
     );
 
-    wire [5:0] theta;   // 6-bit angle index (64 steps per revolution)
+    wire [5:0] theta; // 6-bit angle (64 steps per revolution)
 
     theta_from_breakbeam #(
         .THETA_BITS (6),
-        .PERIOD_BITS(28)   // increase to 26/28 if you want slower RPM support
+        .PERIOD_BITS(28) // needs to be large enough to count one revolution in cycles
+                         // 2^28 = 268,435,456 cycles = 2.68 seconds @ 100 MHz
     ) angle_gen (
         .clk        (clk),
-        .reset      (1'b0),        // tie to a real reset if you have one
+        .reset      (reset), 
         .break_clean(break_clean),
         .theta      (theta)
     );
 
     wire [5:0] next_px_num;  // from neopixel_controller: which LED index
 
-    // Scale theta (0..63) → column (0..63)
-    wire [$clog2(TEX_WIDTH)-1:0] col;
-    assign col = theta;  // direct mapping, both are 0..63
+    wire [$clog2(TEX_WIDTH)-1:0] col; 
+    assign col = theta;  // map theta to column 1 to 1
 
-    // ROM interface
     wire [23:0] pixel_color;
     wire [$clog2(FRAME_SIZE*NUM_FRAMES)-1:0] rom_addr;
 
-    // Calculate ROM address: frame_offset + led_offset + column
     wire [$clog2(FRAME_SIZE*NUM_FRAMES)-1:0] frame_offset;
     assign frame_offset = frame_idx * FRAME_SIZE;
     assign rom_addr = frame_offset + next_px_num * TEX_WIDTH + col;
@@ -95,28 +91,21 @@ module main(
 
 	localparam INSTR_FILE = "main";
 	
-	// Main Processing Unit
 	processor CPU(.clock(clk), .reset(reset), 
-								
-		// ROM
 		.address_imem(instAddr), .q_imem(instData),
 									
-		// Regfile
 		.ctrl_writeEnable(rwe),     .ctrl_writeReg(rd),
 		.ctrl_readRegA(rs1),     .ctrl_readRegB(rs2), 
 		.data_writeReg(rData), .data_readRegA(regA), .data_readRegB(regB),
 									
-		// RAM
 		.wren(mwe), .address_dmem(memAddr), 
 		.data(memDataIn), .q_dmem(memDataOut)); 
 	
-	// Instruction Memory (ROM)
 	ROM #(.DATA_WIDTH(32), .ADDRESS_WIDTH(12), .DEPTH(4096), .MEMFILE({INSTR_FILE, ".mem"}))
 	InstMem(.clk(clk), 
 		.addr(instAddr[11:0]), 
 		.dataOut(instData));
 	
-	// Register File
 	regfile RegisterFile(.clock(clk), 
 		.ctrl_writeEnable(rwe), .ctrl_reset(reset), 
 		.ctrl_writeReg(rd),

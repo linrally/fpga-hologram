@@ -1,7 +1,5 @@
-"""
-python utils/gen.py image.png src/texture.mem
-"""
 from PIL import Image
+import sys
 
 TEX_WIDTH = 64
 TEX_HEIGHT = 52
@@ -19,7 +17,9 @@ def to_bin_grb(c):
 
 preview = Image.new("RGB", (TEX_WIDTH, TEX_HEIGHT))
 
-with open("src/texture.mem", "w") as f:
+output_file = sys.argv[2]
+
+with open(output_file, "w") as f:
     for row in range(TEX_HEIGHT):
         for col in range(TEX_WIDTH):
             quad = col // (TEX_WIDTH // 4)

@@ -42,7 +42,6 @@ def main():
                 rgb = avg_color(img, x0, y0, x1, y1)
                 f.write(to_bin_grb(rgb) + "\n")
 
-                # preview in the logical (flipped) orientation
                 preview.putpixel((col, row), rgb)
 
     preview.show()

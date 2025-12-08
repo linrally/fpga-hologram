@@ -1,13 +1,9 @@
-#!/usr/bin/env python3
-"""
-python gif_to_texture.py input.gif output.mem
-"""
-
 import argparse
 from PIL import Image
 import numpy as np
+import sys
 
-
+# only processes the first 30 frames
 def gif_to_texture(gif_path, output_path, led_count=52, tex_width=64):
     gif = Image.open(gif_path)
 
@@ -19,14 +15,12 @@ def gif_to_texture(gif_path, output_path, led_count=52, tex_width=64):
     except EOFError:
         pass
 
-    # Extract first 30 frames
-    num_frames = min(total_frames, 30)
+    num_frames = min(total_frames, 30) # cut off after 30 frames
 
     print(f"GIF has {total_frames} frames")
     print(f"Extracting first {num_frames} frames")
     print(f"Target size: {tex_width}x{led_count} per frame")
 
-    # Create preview image: stack all frames vertically
     preview = Image.new("RGB", (tex_width, led_count * num_frames))
 
     with open(output_path, 'w') as f:
@@ -51,32 +45,20 @@ def gif_to_texture(gif_path, output_path, led_count=52, tex_width=64):
                     pixel_bin = format(g, '08b') + format(r, '08b') + format(b, '08b')
                     f.write(pixel_bin + '\n')
 
-                    # Add to preview
                     preview.putpixel((col, frame_idx * led_count + led_num), (r, g, b))
 
     total_pixels = num_frames * led_count * tex_width
     print(f"\nDone! Written {total_pixels} pixels to {output_path}")
     print(f"File size: {total_pixels} lines (24 bits each)")
 
-    # Show preview
     preview.show()
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='Convert animated GIF to FPGA texture memory format'
-    )
-    parser.add_argument('input', help='Input GIF file')
-    parser.add_argument('output', help='Output .mem file', nargs='?', default='texture.mem')
-    parser.add_argument('--leds', type=int, default=52,
-                        help='Number of LEDs / texture height (default: 52)')
-    parser.add_argument('--width', '-w', type=int, default=64,
-                        help='Texture width / columns (default: 64)')
+    input_file = sys.argv[1]
+    output_file = sys.argv[2]
 
-    args = parser.parse_args()
-
-    gif_to_texture(args.input, args.output, args.leds, args.width)
-
+    gif_to_texture(input_file, output_file)
 
 if __name__ == '__main__':
     main()
