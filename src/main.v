@@ -79,17 +79,17 @@ module main(
     assign rom_addr = frame_offset + next_px_num * TEX_WIDTH + col;
 
     ROM #(.DATA_WIDTH(24), .ADDRESS_WIDTH($clog2(FRAME_SIZE*NUM_FRAMES)), .DEPTH(FRAME_SIZE*NUM_FRAMES), .MEMFILE("texture.mem"))
-        tex0_rom (.clk(clk), .addr(rom_addr), .dataOut(pixel_color_adj));
+        tex0_rom (.clk(clk), .addr(rom_addr), .dataOut(pixel_color));
 
     neopixel_controller #(
         .px_count_width (6),
-        .px_num         (LED_COUNT),
+        .px_num (LED_COUNT),
         .bits_per_pixel (24)
     ) strip (
-        .clk        (clk),
-        .rst        (1'b0),
-        .start      (1'b1),
-        .pixel      (pixel_color),
+        .clk (clk),
+        .rst (1'b0),
+        .start (1'b1),
+        .pixel (pixel_color_adj),
         .next_px_num(next_px_num),
         .signal_out (ws2812_dout)
     );
