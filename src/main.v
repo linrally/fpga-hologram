@@ -99,17 +99,7 @@ module main(
 		.ctrl_writeReg(rd),
 		.ctrl_readRegA(rs1), .ctrl_readRegB(rs2), 
 		.data_writeReg(rData), .data_readRegA(regA), .data_readRegB(regB));
-						
-	wire [31:0] memDataOutRaw;
-	// Processor Memory (RAM)
-	RAM #(.DATA_WIDTH(32), .ADDRESS_WIDTH(12), .DEPTH(4096)) ProcMem(.clk(clock), 
-		.wEn(mwe), 
-		.addr(memAddr[11:0]), 
-		.dataIn(memDataIn), 
-		.dataOut(memDataOutRaw));
-	
-	MMIO mmio(.clk(clk), .addr(memAddr[11:0]), .mwe(mwe), .data(memDataOutRaw), .data_out(memDataOut), .BTNU(BTNU), .texture_idx(texture_idx));
-
-    assign LED[4:1] = texture_idx;
+    
+    RAM_MMIO RAM_MMIO(.clk(clk), .wEn(mwe), .addr(memAddr[11:0]), .dataIn(memDataIn), .dataOut(memDataOut), .BTNU(BTNU), .LED(LED[4:1]));
 
 endmodule

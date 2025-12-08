@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module button_tb #(parameter INSTR_FILE = "");
+module mmio_tb #(parameter INSTR_FILE = "");
     localparam NUM_CYCLES = 255;
     reg clock = 0, reset = 0;
 
@@ -8,7 +8,7 @@ module button_tb #(parameter INSTR_FILE = "");
 	wire[4:0] rd, rs1, rs2;
 	wire[31:0] instAddr, instData, 
 		rData, regA, regB,
-		memAddr, memDataIn, memDataOut_cpu, memDataOut_ram;
+		memAddr, memDataIn, memDataOut;
 
 	processor CPU(.clock(clock), .reset(reset), 
 								
@@ -22,7 +22,7 @@ module button_tb #(parameter INSTR_FILE = "");
 									
 		// RAM
 		.wren(mwe), .address_dmem(memAddr), 
-		.data(memDataIn), .q_dmem(memDataOut_cpu)); 
+		.data(memDataIn), .q_dmem(memDataOut)); 
 	
 	ROM #(.DATA_WIDTH(32), .ADDRESS_WIDTH(12), .DEPTH(4096), .MEMFILE({INSTR_FILE}))
 	InstMem(.clk(clock), 
@@ -34,26 +34,13 @@ module button_tb #(parameter INSTR_FILE = "");
 		.ctrl_writeReg(rd),
 		.ctrl_readRegA(rs1), .ctrl_readRegB(rs2), 
 		.data_writeReg(rData), .data_readRegA(regA), .data_readRegB(regB));
+
+    wire [4:0] LED;
 						
-	RAM #(.DATA_WIDTH(32), .ADDRESS_WIDTH(12), .DEPTH(4096)) ProcMem(.clk(clock), 
-		.wEn(mwe), 
-		.addr(memAddr[11:0]), 
-		.dataIn(memDataIn), 
-		.dataOut(memDataOut_ram));
+    RAM_MMIO ProcMem(.clk(clock), .wEn(mwe), .addr(memAddr[11:0]), .dataIn(memDataIn), .dataOut(memDataOut), .BTNU(BTNU), .LED(LED));
 
     reg BTNU = 0;
-    wire [3:0] texture_idx;
 
-    MMIO mmio(
-        .clk(clock),
-        .addr(memAddr[11:0]),
-        .mwe(mwe),
-        .data(memDataOut_ram),
-        .data_out(memDataOut_cpu),
-        .BTNU(BTNU),
-        .texture_idx(texture_idx)
-    );
-    
     always #5 clock = ~clock;
 
     integer cycles;
@@ -64,19 +51,22 @@ module button_tb #(parameter INSTR_FILE = "");
         #1;
         reset = 0;
 
-		for (cycles = 0; cycles < num_cycles; cycles = cycles + 1) begin
-            if(cycles == 10) begin
-                BTNU = 1;
-            end
-            if (cycles == 11) begin
-                BTNU = 0;
-            end
-			// Every rising edge, write to the actual file
-			@(posedge clock);
-			if (rwe && rd != 0) begin
-				$display("Cycle %3d: Wrote %0d into register %0d", cycles, $signed(rData), rd);
-			end
-		end
+        for (cycles = 0; cycles < num_cycles; cycles = cycles + 1) begin
+
+            case (cycles)
+                10: BTNU = 1;
+                50: BTNU = 0;
+                80: BTNU = 1;
+                120: BTNU = 0;
+                150: BTNU = 1;
+                190: BTNU = 0;
+            endcase
+
+            @(posedge clock);
+
+        end
+
+        $display("LED = %0d", LED[3:1]);
 
         #100;
         $finish;
