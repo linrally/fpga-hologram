@@ -12,7 +12,7 @@ set_property -dict { PACKAGE_PIN M18   IOSTANDARD LVCMOS33 } [get_ports { BTNU }
 
 # TODO: set correct pins for additional buttons
 # Example (Nexys A7 reference; adjust to your board pinout):
-# set_property -dict { PACKAGE_PIN P18   IOSTANDARD LVCMOS33 } [get_ports { BTN_INV }]; # Sch=btnd (placeholder)
-# set_property -dict { PACKAGE_PIN N17   IOSTANDARD LVCMOS33 } [get_ports { BTN_BRT }]; # Sch=btnr (placeholder)
+set_property -dict { PACKAGE_PIN P18   IOSTANDARD LVCMOS33 } [get_ports { BTN_INV }]; # Sch=btnd (placeholder)
+set_property -dict { PACKAGE_PIN M17   IOSTANDARD LVCMOS33 } [get_ports { BTN_BRT }]; # Sch=btnr (placeholder)
 
 set_property PULLUP true [get_ports { break_din }];
