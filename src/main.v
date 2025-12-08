@@ -9,13 +9,13 @@ module main(
     //--------------------------------  MAPPER UNIT  --------------------------------
     localparam LED_COUNT  = 52;
     localparam TEX_WIDTH  = 64;
-    localparam NUM_FRAMES = 1;  // number of animation frames
+    localparam NUM_FRAMES = 237;  // number of animation frames
     localparam FRAME_SIZE = TEX_WIDTH * LED_COUNT;  // pixels per frame
 
-    // 24 fps animation timer
+    // 15 fps animation timer
     localparam CLK_FREQ = 100_000_000;  // 100 MHz clock
-    localparam FPS = 24;
-    localparam CYCLES_PER_FRAME = CLK_FREQ / FPS;  // 100M / 24 = 4,166,667
+    localparam FPS = 15;
+    localparam CYCLES_PER_FRAME = CLK_FREQ / FPS;  // 100M / 15 = 6,666,667
 
     reg [31:0] frame_timer = 32'd0;
     reg [7:0] frame_idx = 8'd0;  // current animation frame
