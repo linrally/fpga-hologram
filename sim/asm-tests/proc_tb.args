@@ -1,0 +1,3 @@
+sim/asm-tests/simple.s
+sim/asm-tests/memory_bypass.s
+sim/asm-tests/memory_no_bypass.s

@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module Wrapper_tb #(parameter INSTR_FILE = "");
+module proc_tb #(parameter INSTR_FILE = "");
     localparam NUM_CYCLES = 255;
     reg clock = 0, reset = 0;
 
@@ -8,7 +8,7 @@ module Wrapper_tb #(parameter INSTR_FILE = "");
 	wire[4:0] rd, rs1, rs2;
 	wire[31:0] instAddr, instData, 
 		rData, regA, regB,
-		memAddr, memDataIn, memDataOut;
+		memAddr, memDataIn, memDataOut_cpu, memDataOut_ram;
 
 	processor CPU(.clock(clock), .reset(reset), 
 								
@@ -22,7 +22,7 @@ module Wrapper_tb #(parameter INSTR_FILE = "");
 									
 		// RAM
 		.wren(mwe), .address_dmem(memAddr), 
-		.data(memDataIn), .q_dmem(memDataOut)); 
+		.data(memDataIn), .q_dmem(memDataOut_cpu)); 
 	
 	ROM #(.DATA_WIDTH(32), .ADDRESS_WIDTH(12), .DEPTH(4096), .MEMFILE({INSTR_FILE}))
 	InstMem(.clk(clock), 
@@ -40,7 +40,7 @@ module Wrapper_tb #(parameter INSTR_FILE = "");
 		.wEn(mwe), 
 		.addr(memAddr[11:0]), 
 		.dataIn(memDataIn), 
-		.dataOut(memDataOut));
+		.dataOut(memDataOut_cpu));
     
     always #5 clock = ~clock;
 

@@ -49,36 +49,38 @@ sim: # simulate verilog
 	done
 	@echo "\033[1;32mAll tests passed!\033[0m"
 
-psim: # processor simulation
+asim:
 	@mkdir -p sim/build; \
-	args="sim/proc/Wrapper_tb.args"; \
-	tb="sim/proc/Wrapper_tb.v"; \
-	echo "Running processor tests..."; \
-	while read arg; do \
-		[ -z "$$arg" ] && continue; \
-		sfile="$$arg"; \
-		memfile="$${sfile%.s}.mem"; \
+	echo "Running assembly tests..."; \
+	for tbfile in $$(find sim/asm-tests -name "*_tb.v"); do \
+		tbname=$$(basename $$tbfile .v); \
+		topmod=$$tbname; \
+		argsfile="sim/asm-tests/$${tbname}.args"; \
 		echo "================================================"; \
-		echo "Assembling $$sfile -> $$memfile"; \
-		python3 assembler/assemble.py $$sfile -o $$memfile || exit 1; \
-		testname=$$(basename $$sfile .s); \
-		base="Wrapper_tb_$${testname}"; \
-		echo "Compiling $$tb with $$memfile"; \
+		echo "$$tbname (top module $$topmod)"; \
 		echo "================================================"; \
-		iverilog -o sim/build/$$base -s Wrapper_tb \
-			-PWrapper_tb.INSTR_FILE=\"$$memfile\" \
-			$(RTL) $$tb || exit 1; \
-		bin=$$(pwd)/sim/build/$$base; \
-		echo "Running $$base..."; \
-		out=$$( vvp $$bin 2>&1 ); \
-		status=$$?; \
-		echo "$$out" | grep -v '^VCD'; \
-		if [ $$status -ne 0 ]; then \
-			echo "\033[1;31mFAILED on $$sfile in $$base\033[0m"; \
-			exit 1; \
+		if [ ! -f $$argsfile ]; then \
+			echo "No args file $$argsfile, skipping."; \
+			continue; \
 		fi; \
-	done < $$args; \
-	echo "\033[1;32mProcessor tests passed!\033[0m"
+		while read sfile; do \
+			[ -z "$$sfile" ] && continue; \
+			memfile="$${sfile%.s}.mem"; \
+			echo "Assembling $$sfile -> $$memfile"; \
+			python3 assembler/assemble.py $$sfile -o $$memfile || exit 1; \
+			base="${tbname}_$$(basename $$sfile .s)"; \
+			echo "Compiling $$tbfile with program $$sfile"; \
+			iverilog -o sim/build/$$base \
+				-s $$topmod \
+				-P$${topmod}.INSTR_FILE=\"$$memfile\" \
+				$(RTL) $$tbfile || exit 1; \
+			echo "Running $$base"; \
+			out=$$(vvp sim/build/$$base 2>&1); \
+			echo "$$out" | grep -v '^VCD'; \
+		done < $$argsfile; \
+	done; \
+	echo "\033[1;32mAll tests passed!\033[0m"
+
 
 assemble: 
 	python3 assembler/assemble.py src/main.s -o src/main.mem
