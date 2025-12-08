@@ -8,7 +8,7 @@ Each frame is organized as: [LED0_cols][LED1_cols]...[LED51_cols]
 Each LED has 256 columns (one per angle around the circle).
 
 Usage:
-    python gif_to_texture.py input.gif output.mem --frames 8
+    python gif_to_texture.py input.gif output.mem --frames 24
 """
 
 import argparse
@@ -46,8 +46,8 @@ def gif_to_texture(gif_path, output_path, num_frames, led_count=52, tex_width=25
     # Open output file
     with open(output_path, 'w') as f:
         for frame_idx in range(num_frames):
-            # Calculate which GIF frame to use (loop if needed)
-            gif_frame_idx = frame_idx % total_gif_frames
+            # Sample evenly across all GIF frames
+            gif_frame_idx = int((frame_idx * total_gif_frames) / num_frames)
             gif.seek(gif_frame_idx)
 
             # Convert to RGB if needed
@@ -57,8 +57,9 @@ def gif_to_texture(gif_path, output_path, num_frames, led_count=52, tex_width=25
             # Use LANCZOS for high-quality downsampling
             frame = frame.resize((tex_width, led_count), Image.Resampling.LANCZOS)
 
-            # Flip vertically (flip on x-axis)
+            # Flip vertically (flip on x-axis) and horizontally (flip on y-axis)
             frame = frame.transpose(Image.FLIP_TOP_BOTTOM)
+            frame = frame.transpose(Image.FLIP_LEFT_RIGHT)
 
             # Convert to numpy array
             frame_array = np.array(frame)
