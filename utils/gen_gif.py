@@ -1,0 +1,64 @@
+import argparse
+from PIL import Image
+import numpy as np
+import sys
+
+# only processes the first 30 frames
+def gif_to_texture(gif_path, output_path, led_count=52, tex_width=64):
+    gif = Image.open(gif_path)
+
+    total_frames = 0
+    try:
+        while True:
+            gif.seek(total_frames)
+            total_frames += 1
+    except EOFError:
+        pass
+
+    num_frames = min(total_frames, 30) # cut off after 30 frames
+
+    print(f"GIF has {total_frames} frames")
+    print(f"Extracting first {num_frames} frames")
+    print(f"Target size: {tex_width}x{led_count} per frame")
+
+    preview = Image.new("RGB", (tex_width, led_count * num_frames))
+
+    with open(output_path, 'w') as f:
+        for frame_idx in range(num_frames):
+            gif.seek(frame_idx)
+
+            frame = gif.convert('RGB')
+
+            frame = frame.resize((tex_width, led_count), Image.Resampling.LANCZOS)
+
+            frame = frame.transpose(Image.FLIP_TOP_BOTTOM)
+            frame = frame.transpose(Image.FLIP_LEFT_RIGHT)
+
+            frame_array = np.array(frame)
+
+            print(f"Processing frame {frame_idx}/{num_frames}")
+
+            for led_num in range(led_count):
+                for col in range(tex_width):
+                    r, g, b = frame_array[led_num, col]
+
+                    pixel_bin = format(g, '08b') + format(r, '08b') + format(b, '08b')
+                    f.write(pixel_bin + '\n')
+
+                    preview.putpixel((col, frame_idx * led_count + led_num), (r, g, b))
+
+    total_pixels = num_frames * led_count * tex_width
+    print(f"\nDone! Written {total_pixels} pixels to {output_path}")
+    print(f"File size: {total_pixels} lines (24 bits each)")
+
+    preview.show()
+
+
+def main():
+    input_file = sys.argv[1]
+    output_file = sys.argv[2]
+
+    gif_to_texture(input_file, output_file)
+
+if __name__ == '__main__':
+    main()
