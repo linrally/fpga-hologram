@@ -1,10 +1,11 @@
 module main(
-    input wire clk,         
+    input wire clk,
     input wire reset,
     input wire BTNU,
-    input wire break_din,   
-    output wire ws2812_dout, 
-    output wire [4:0] LED    
+    input wire BTND,
+    input wire break_din,
+    output wire ws2812_dout,
+    output wire [4:0] LED
 );
     //--------------------------------  MAPPER UNIT  --------------------------------
     localparam LED_COUNT  = 52;
@@ -61,14 +62,15 @@ module main(
     wire [23:0] pixel_color;
     wire [23:0] pixel_color_adj;
     wire [1:0] brightness;
+    wire invert;
 
     wire [7:0] r_in = pixel_color[15:8];
     wire [7:0] g_in = pixel_color[23:16];
     wire [7:0] b_in = pixel_color[7:0];
 
-    wire [7:0] r_out = r_in >> brightness;
-    wire [7:0] g_out = g_in >> brightness;
-    wire [7:0] b_out = b_in >> brightness;
+    wire [7:0] r_out = (r_in >> brightness) ^ {8{invert}};
+    wire [7:0] g_out = (g_in >> brightness) ^ {8{invert}};
+    wire [7:0] b_out = (b_in >> brightness) ^ {8{invert}};
 
     assign pixel_color_adj = {g_out, r_out, b_out}; // drive takes GRB
 
@@ -125,6 +127,6 @@ module main(
 		.ctrl_readRegA(rs1), .ctrl_readRegB(rs2), 
 		.data_writeReg(rData), .data_readRegA(regA), .data_readRegB(regB));
     
-    RAM_MMIO RAM_MMIO(.clk(clk), .wEn(mwe), .addr(memAddr[11:0]), .dataIn(memDataIn), .dataOut(memDataOut), .BTNU(BTNU), .LED(LED), .brightness(brightness));
+    RAM_MMIO RAM_MMIO(.clk(clk), .wEn(mwe), .addr(memAddr[11:0]), .dataIn(memDataIn), .dataOut(memDataOut), .BTNU(BTNU), .BTND(BTND), .LED(LED), .brightness(brightness), .invert(invert));
 
 endmodule
