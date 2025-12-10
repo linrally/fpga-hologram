@@ -101,6 +101,6 @@ The CPU handles all the "soft" control logic - things that don't need microsecon
 
 Because our project mixes Verilog and VHDL (the NeoPixel controller is VHDL while everything else is Verilog), we had to use **Xilinx Vivado** for synthesis and simulation. Vivado is one of the few tools that can handle mixed-language projects seamlessly. The project file is in `build/hologram.xpr` if you want to open it in Vivado.
 
-## References and Works Cited
+## References 
 
 - **NeoPixel Controller**: [blaz-r/fpga-neopixel](https://github.com/blaz-r/fpga-neopixel) - VHDL implementation of WS2812B/SK6812 LED driver. We adapted the `neopixel_controller` module from this project after struggling to implement the timing-critical protocol ourselves. The module handles the precise 800kHz serial protocol required by WS2812B LEDs.
