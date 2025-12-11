@@ -84,6 +84,22 @@ increment_btnd:
     sw $s1, 1004($zero) # write invert to mmio
     j debounce_continue_btnd
 
+delay_loop:
+    add  $t6, $t6, $t4
+    addi $t4, $t4, -1
+    bne  $t4, $zero, delay_loop
+
+    addi $t7, $t7, 1        # frame counter
+    add  $s0, $t7, $t6
+    add  $s0, $s0, $t1
+
+    j loop
+
+util_block:
+    # 16 button samples for debouncing
+    addi $t5, $zero, 16
+    addi $t6, $zero, 0
+
 debounce_continue_btnd: 
     add $s5, $s2, $zero
     j continue_btnd
